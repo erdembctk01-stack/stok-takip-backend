@@ -340,30 +340,45 @@ HTML_PANEL = r"""
         }
 
         async function hesaplaTotalPara() {
-            const [pRes, gRes, fRes] = await Promise.all([fetch('/api/products'), fetch('/api/expenses'), fetch('/api/invoices')]);
-            const products = await pRes.json();
-            const expenses = await gRes.json();
-            const invoices = await fRes.json();
+            const [pRes, gRes, fRes] = await Promise.all([
+                fetch('/api/products'), 
+                fetch('/api/expenses'), 
+                fetch('/api/invoices')
+            ]);
+            
+            const prods = await pRes.json();
+            const exps = await gRes.json();
+            const invs = await fRes.json();
 
             const bugun = new Date().toLocaleDateString('tr-TR');
 
-            let stokDegeri = 0;
-            products.forEach(p => stokDegeri += (p.stock * p.price));
+            // 1. Toplam Depo Değeri (Tüm stokların ederi)
+            let depoDegeri = 0;
+            prods.forEach(p => { depoDegeri += (Number(p.stock) * Number(p.price)); });
 
+            // 2. Günlük Giderler
             let gunlukGider = 0;
-            expenses.filter(e => e.tarih === bugun).forEach(e => gunlukGider += e.tutar);
+            exps.forEach(e => {
+                if(e.tarih === bugun) gunlukGider += Number(e.tutar);
+            });
 
+            // 3. Günlük Kazanç (Faturalardaki satışlar)
             let gunlukKazanc = 0;
-            invoices.filter(i => i.tarih.includes(bugun)).forEach(i => {
-                const parca = products.find(p => p._id === i.parca_id);
-                if(parca) gunlukKazanc += (i.adet * parca.price);
+            invs.forEach(i => {
+                if(i.tarih.includes(bugun)) {
+                    // Parça fiyatını bul
+                    const ilgiliParca = prods.find(p => p._id === i.parca_id || p.name === i.parca_ad);
+                    if(ilgiliParca) {
+                        gunlukKazanc += (Number(i.adet) * Number(ilgiliParca.price));
+                    }
+                }
             });
 
             alert(
                 `📊 ÖZCAN OTO - FİNANSAL ÖZET\n\n` +
-                `🔹 GÜNLÜK KAZANÇ (Faturalar): ₺${gunlukKazanc.toLocaleString('tr-TR')}\n` +
+                `🔹 GÜNLÜK KAZANÇ (Satış): ₺${gunlukKazanc.toLocaleString('tr-TR')}\n` +
                 `🔸 GÜNLÜK GİDER: ₺${gunlukGider.toLocaleString('tr-TR')}\n` +
-                `📦 TÜM PARÇALARIN TOPLAM DEĞERİ: ₺${stokDegeri.toLocaleString('tr-TR')}`
+                `📦 TÜM DEPO DEĞERİ: ₺${depoDegeri.toLocaleString('tr-TR')}`
             );
         }
 
