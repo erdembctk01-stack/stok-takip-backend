@@ -139,9 +139,10 @@ HTML_PANEL = r"""
                         <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Kritik Limit</p>
                         <h4 id="dash-crit" class="text-5xl font-black text-red-600 mt-2">0</h4>
                     </div>
-                    <button onclick="hesaplaTotalPara()" class="custom-card p-10 border-b-8 border-emerald-500 hover:bg-emerald-50 transition-all text-left">
-                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Total Para</p>
-                        <h4 class="text-4xl font-black text-emerald-600 mt-2 italic flex items-center gap-2">HESAPLA <i class="fas fa-calculator text-xl"></i></h4>
+                    
+                    <button onclick="hesaplaTotalPara()" class="custom-card p-10 border-b-8 border-emerald-500 hover:bg-emerald-50 transition-all text-left block w-full outline-none focus:outline-none">
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest pointer-events-none">Total Para</p>
+                        <h4 class="text-4xl font-black text-emerald-600 mt-2 italic flex items-center gap-2 pointer-events-none">HESAPLA <i class="fas fa-calculator text-xl"></i></h4>
                     </button>
                 </div>
                 <div class="bg-slate-900 p-12 rounded-[3.5rem] shadow-2xl text-white">
@@ -332,14 +333,12 @@ HTML_PANEL = r"""
             }
         }
 
-        // --- DASHBOARD TOTAL PARA HESAPLAMA ---
         async function hesaplaTotalPara() {
             const [pRes, gRes, fRes] = await Promise.all([fetch('/api/products'), fetch('/api/expenses'), fetch('/api/invoices')]);
             const products = await pRes.json();
             const expenses = await gRes.json();
             const invoices = await fRes.json();
 
-            // Bugünün tarihini al (GÜNLÜK HESAP İÇİN)
             const bugun = new Date().toLocaleDateString('tr-TR');
 
             let stokDegeri = 0;
@@ -468,10 +467,8 @@ def fatura_kes():
     if parca['stock'] < data['adet']:
         return jsonify({"error": "Yetersiz stok usta!"}), 400
     
-    # 1. Stoktan düş
     db.products.update_one({"_id": ObjectId(data['parcaId'])}, {"$inc": {"stock": -data['adet']}})
     
-    # 2. Faturayı kaydet
     db.invoices.insert_one({
         "ad": data['ad'],
         "tel": data['tel'],
@@ -481,14 +478,12 @@ def fatura_kes():
         "tarih": data['tarih']
     })
 
-    # 3. CARİ KAYITLARA OTOMATİK EKLE
-    # Eğer müşteri zaten kayıtlı değilse ekle
     mevcut_cari = db.customers.find_one({"ad": data['ad']})
     if not mevcut_cari:
         db.customers.insert_one({
             "ad": data['ad'],
             "tel": data['tel'],
-            "tarih": data['tarih'].split(' ')[0] # Sadece tarih kısmını al
+            "tarih": data['tarih'].split(' ')[0]
         })
         
     return jsonify({"ok": True})
