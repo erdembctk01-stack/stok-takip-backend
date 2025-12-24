@@ -7,21 +7,27 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# MongoDB Bağlantısı (Kendi linkini buraya koy)
-app.config["MONGO_URI"] = "BURAYA_KENDI_MONGODB_LINKINI_YAPISTIR"
+# ÖNEMLİ: Kendi MongoDB linkini tırnak içine yapıştır
+app.config["MONGO_URI"] = "BURAYA_MONGODB_LINKINI_YAPISTIR"
 mongo = PyMongo(app)
+
+@app.route('/')
+def home():
+    return "Backend Calisiyor!"
 
 @app.route('/products', methods=['GET'])
 def get_products():
-    products = list(mongo.db.products.find())
-    for p in products:
-        p['_id'] = str(p['_id'])
-    return jsonify(products)
+    try:
+        products = list(mongo.db.products.find())
+        for p in products:
+            p['_id'] = str(p['_id'])
+        return jsonify(products)
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
 
 @app.route('/products', methods=['POST'])
 def add_product():
     data = request.json
-    # Görseldeki yapıya uygun veriler
     new_product = {
         "name": data.get("name"),
         "stock": int(data.get("stock", 0)),
@@ -37,4 +43,5 @@ def delete_product(id):
     return jsonify({"msg": "Silindi"}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
