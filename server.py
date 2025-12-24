@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 # --- MONGODB BAĞLANTISI ---
-MONGO_URI = "mongodb+srv://erdembctk01_db_user:TqSSkvbFirlm8lyb@cluster0.o27rfmv.mongodb.net/?appName=Cluster0" 
+MONGO_URI = MONGO_URI = "mongodb+srv://erdembctk01_db_user:TqSSkvbFirlm8lyb@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
 
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
@@ -195,4 +195,5 @@ def del_p(id):
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
+
 
