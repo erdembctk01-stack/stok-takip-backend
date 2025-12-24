@@ -8,19 +8,19 @@ app = Flask(__name__)
 CORS(app)
 
 # --- MONGODB BAĞLANTISI ---
-# Linkindeki < > işaretlerini senin şifren için temizledim knk
+# Senin linkini ve şifreni buraya hatasız şekilde yerleştirdim knk.
 MONGO_URI = "mongodb+srv://erdembctk01_db_user:TqSSkvbFirlm8lyb@cluster0.o27rfmv.mongodb.net/?appName=Cluster0" 
 
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
 
-# --- GÖRSEL PANEL (Hızlı Kullanım İçin Tasarlandı) ---
+# --- GÖRSEL PANEL (Yeni İsteklerine Göre Güncellendi) ---
 HTML_PANEL = """
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>StokTakip Pro - Canlı Yönetim</title>
+    <title>StokTakip Pro - Yönetim Paneli</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -36,29 +36,34 @@ HTML_PANEL = """
                 <h2 id="stat-crit-count" class="text-4xl font-black text-red-500 mt-2">0</h2>
             </div>
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100">
-                <p class="text-emerald-400 text-[10px] font-black uppercase tracking-widest">Toplam Portföy Değeri</p>
+                <p class="text-emerald-400 text-[10px] font-black uppercase tracking-widest">Toplam Değer</p>
                 <h2 id="stat-total-val" class="text-4xl font-black text-emerald-600 mt-2">₺0</h2>
             </div>
         </div>
 
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-            <div class="relative w-full md:w-1/2">
-                <i class="fas fa-search absolute left-5 top-5 text-slate-400"></i>
-                <input id="search" oninput="yukle()" type="text" placeholder="Hızlı ara..." class="w-full pl-14 pr-6 py-4 bg-white rounded-2xl shadow-sm outline-none font-bold">
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="relative flex-1">
+                    <i class="fas fa-search absolute left-5 top-5 text-slate-400"></i>
+                    <input id="search" oninput="yukle()" type="text" placeholder="Hızlı ara..." class="w-full pl-14 pr-6 py-4 bg-slate-50 rounded-2xl outline-none font-bold">
+                </div>
+                <button onclick="document.getElementById('ekle-form').classList.toggle('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black shadow-lg transition-all active:scale-95">
+                    + YENİ PARÇA EKLE
+                </button>
             </div>
-            <button onclick="hizliEkle()" class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-2xl font-black shadow-lg transition-all active:scale-95">
-                <i class="fas fa-plus-circle mr-2"></i> YENİ EŞYA EKLE
-            </button>
+
+            <div id="ekle-form" class="hidden mt-8 grid grid-cols-1 md:grid-cols-4 gap-4 border-t pt-8">
+                <input id="in-name" type="text" placeholder="Parça Adı / Kod" class="p-4 bg-slate-50 rounded-xl outline-none font-bold">
+                <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl outline-none font-bold">
+                <input id="in-price" type="number" placeholder="Birim Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl outline-none font-bold">
+                <button onclick="hizliEkle()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl">KAYDET</button>
+            </div>
         </div>
 
         <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
             <table class="w-full text-left">
                 <thead class="bg-slate-50 border-b text-slate-400 text-[10px] font-black uppercase">
-                    <tr>
-                        <th class="px-10 py-6">Ürün Detayı</th>
-                        <th class="px-10 py-6 text-center">Stok Yönetimi</th>
-                        <th class="px-10 py-6 text-right">İşlem</th>
-                    </tr>
+                    <tr><th class="px-10 py-6">Parça & Kategori</th><th class="px-10 py-6 text-center">Stok</th><th class="px-10 py-6 text-right">İşlem</th></tr>
                 </thead>
                 <tbody id="list" class="divide-y divide-slate-50"></tbody>
             </table>
@@ -81,16 +86,19 @@ HTML_PANEL = """
                     tVal += (i.stock * (i.price || 0));
                     return `
                     <tr class="\${isCrit ? 'bg-red-50/50' : 'hover:bg-slate-50'} transition-all">
-                        <td class="px-10 py-6 font-black text-slate-800 uppercase text-lg">\${i.name}</td>
+                        <td class="px-10 py-6">
+                            <div class="font-black text-slate-800 uppercase text-lg">\${i.name}</div>
+                            <div class="text-[10px] font-bold text-blue-500 uppercase">\${i.category || 'GENEL'}</div>
+                        </td>
                         <td class="px-10 py-6 text-center">
                             <div class="flex items-center justify-center gap-4 bg-white border rounded-2xl p-1 w-fit mx-auto shadow-sm">
-                                <button onclick="stokGuncelle('\${i._id}', -1)" class="w-10 h-10 hover:bg-red-50 text-red-500 font-bold transition-colors">-</button>
+                                <button onclick="stokGuncelle('\${i._id}', -1)" class="w-10 h-10 hover:bg-red-50 text-red-500 font-bold">-</button>
                                 <span class="w-10 font-black text-xl">\${i.stock}</span>
-                                <button onclick="stokGuncelle('\${i._id}', 1)" class="w-10 h-10 hover:bg-green-50 text-green-500 font-bold transition-colors">+</button>
+                                <button onclick="stokGuncelle('\${i._id}', 1)" class="w-10 h-10 hover:bg-green-50 text-green-500 font-bold">+</button>
                             </div>
                         </td>
                         <td class="px-10 py-6 text-right">
-                            <button onclick="sil('\${i._id}')" class="text-slate-300 hover:text-red-600 p-3 transition-colors"><i class="fas fa-trash-alt text-lg"></i></button>
+                            <button onclick="sil('\${i._id}')" class="text-slate-300 hover:text-red-600 p-3"><i class="fas fa-trash-alt text-lg"></i></button>
                         </td>
                     </tr>`;
                 }).join('');
@@ -98,19 +106,32 @@ HTML_PANEL = """
                 document.getElementById('stat-total-items').innerText = tStock;
                 document.getElementById('stat-crit-count').innerText = crit;
                 document.getElementById('stat-total-val').innerText = '₺' + tVal.toLocaleString();
-            } catch (e) { console.log("Veritabanına bağlanılıyor..."); }
+            } catch (e) { console.log("Bağlantı kuruluyor..."); }
         }
 
         async function hizliEkle() {
-            const ad = prompt("Eşya Adı:");
-            if(!ad) return;
-            const fiyat = prompt("Birim Fiyat (₺):", "0");
-            const stok = prompt("Başlangıç Stoğu:", "0");
+            const name = document.getElementById('in-name').value;
+            const category = document.getElementById('in-cat').value;
+            const price = document.getElementById('in-price').value;
+
+            if(!name) { alert("Lütfen parça adı girin!"); return; }
+
             await fetch('/api/products', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: ad, price: parseFloat(fiyat), stock: parseInt(stok)})
+                body: JSON.stringify({
+                    name: name, 
+                    category: category, 
+                    price: parseFloat(price || 0), 
+                    stock: 0
+                })
             });
+            
+            // Kutuları temizle ve gizle
+            document.getElementById('in-name').value = '';
+            document.getElementById('in-cat').value = '';
+            document.getElementById('in-price').value = '';
+            document.getElementById('ekle-form').classList.add('hidden');
             yukle();
         }
 
@@ -124,7 +145,7 @@ HTML_PANEL = """
         }
 
         async function sil(id) {
-            if(confirm('Kalıcı olarak silinsin mi?')) { await fetch('/api/products/'+id, {method: 'DELETE'}); yukle(); }
+            if(confirm('Silinsin mi?')) { await fetch('/api/products/'+id, {method: 'DELETE'}); yukle(); }
         }
         yukle();
     </script>
@@ -160,5 +181,3 @@ def del_p(id):
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
-
-
