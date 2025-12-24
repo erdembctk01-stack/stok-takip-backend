@@ -3,7 +3,6 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import os
-import sys
 
 app = Flask(__name__)
 CORS(app)
@@ -19,7 +18,7 @@ HTML_PANEL = r"""
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Özcan Oto Servis | Profesyonel Stok</title>
+    <title>Özcan Oto Servis | Stok Takip</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -32,16 +31,13 @@ HTML_PANEL = r"""
                 <h1 class="text-3xl font-black text-slate-800 italic uppercase">ÖZCAN OTO</h1>
                 <p class="text-slate-400 font-bold uppercase text-xs tracking-widest mt-2">Yönetim Girişi</p>
             </div>
-            
             <div class="space-y-4">
                 <input id="log-user" type="text" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold focus:border-blue-500">
                 <input id="log-pass" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold focus:border-blue-500">
-                
                 <div class="flex items-center gap-2 px-2">
                     <input type="checkbox" id="remember" class="w-5 h-5 cursor-pointer">
                     <label for="remember" class="text-sm font-bold text-slate-600 cursor-pointer">30 Gün Hatırla</label>
                 </div>
-
                 <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95 text-lg">SİSTEME GİR</button>
             </div>
         </div>
@@ -56,7 +52,6 @@ HTML_PANEL = r"""
                         Kritik Parça Sayısı: <span id="stat-crit-count">0</span>
                     </div>
                 </div>
-                
                 <div class="flex gap-3">
                     <button onclick="toggleModal()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black shadow-md hover:bg-blue-700 transition-all">KASA DURUMU</button>
                     <button onclick="sendDailyReport()" class="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black shadow-md hover:bg-emerald-700 transition-all">
@@ -69,16 +64,16 @@ HTML_PANEL = r"""
             </div>
 
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border mb-8 grid grid-cols-1 md:grid-cols-5 gap-3">
-                <input id="in-code" type="text" placeholder="Parça Kodu" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none focus:border-blue-400">
-                <input id="in-name" type="text" placeholder="Parça İsmi" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none focus:border-blue-400">
-                <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none focus:border-blue-400">
-                <input id="in-price" type="number" placeholder="Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none focus:border-blue-400">
+                <input id="in-code" type="text" placeholder="Parça Kodu" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <input id="in-name" type="text" placeholder="Parça İsmi" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <input id="in-price" type="number" placeholder="Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
                 <button onclick="hizliEkle()" class="bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all uppercase text-sm">Parçayı Ekle</button>
             </div>
 
             <div class="relative mb-6">
                 <i class="fas fa-search absolute left-5 top-5 text-slate-400"></i>
-                <input id="search" oninput="yukle()" type="text" placeholder="Parça adı veya koduyla arama yapın..." class="w-full pl-14 pr-6 py-4 bg-white rounded-2xl shadow-sm outline-none font-bold border-2 focus:border-blue-500">
+                <input id="search" oninput="yukle()" type="text" placeholder="Parça adı veya koduyla arama..." class="w-full pl-14 pr-6 py-4 bg-white rounded-2xl shadow-sm outline-none font-bold border-2 focus:border-blue-500">
             </div>
 
             <div class="bg-white rounded-[2rem] shadow-sm border overflow-hidden">
@@ -110,17 +105,15 @@ HTML_PANEL = r"""
             const pass = document.getElementById('log-pass').value;
             const remember = document.getElementById('remember').checked;
 
-            // İSTEDİĞİN SABİT BİLGİLER
             if(user === "ozcanoto" && pass === "eren9013") {
                 const expiry = remember ? 30 : 1;
                 const now = new Date();
                 now.setTime(now.getTime() + (expiry * 24 * 60 * 60 * 1000));
-                
                 localStorage.setItem('session', 'active_session');
                 localStorage.setItem('expiry', now.getTime());
                 checkAuth();
             } else {
-                alert("Hatalı Kullanıcı Adı veya Şifre!");
+                alert("Hatalı Giriş!");
             }
         }
 
@@ -128,7 +121,6 @@ HTML_PANEL = r"""
             const session = localStorage.getItem('session');
             const expiry = localStorage.getItem('expiry');
             const now = new Date().getTime();
-
             if(session && expiry && now < expiry) {
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('main-section').classList.remove('hidden');
@@ -149,16 +141,14 @@ HTML_PANEL = r"""
             currentProducts = await res.json();
             const query = document.getElementById('search').value.toLowerCase();
             const list = document.getElementById('list');
-            
             let tVal = 0; let critCount = 0;
 
             list.innerHTML = currentProducts.filter(i => (i.name+i.code).toLowerCase().includes(query)).map(i => {
                 const isCrit = i.stock <= 2;
                 if(i.stock <= 10) critCount++;
                 tVal += (i.stock * i.price);
-
                 return `
-                <tr class="${isCrit ? 'bg-red-50' : 'hover:bg-slate-50'} transition-all">
+                <tr class="${isCrit ? 'bg-red-50' : 'hover:bg-slate-50'}">
                     <td class="px-8 py-6">
                         <div class="text-[10px] font-black text-slate-900 bg-yellow-400 w-fit px-2 rounded mb-1">₺${i.price.toLocaleString()}</div>
                         <div class="font-black ${isCrit ? 'text-red-600 underline' : 'text-slate-800'} uppercase text-lg leading-tight">${i.name}</div>
@@ -166,32 +156,40 @@ HTML_PANEL = r"""
                     </td>
                     <td class="px-8 py-6 font-bold text-slate-500 uppercase text-xs">${i.category}</td>
                     <td class="px-8 py-6">
-                        <div class="flex items-center justify-center gap-2 bg-white border p-1 rounded-xl w-fit mx-auto shadow-sm">
-                            <button onclick="stokGuncelle('${i._id}', -1, ${i.stock})" class="w-8 h-8 text-red-500 font-bold hover:bg-red-50 rounded-lg">-</button>
+                        <div class="flex items-center justify-center gap-2 bg-white border p-1 rounded-xl w-fit mx-auto">
+                            <button onclick="stokGuncelle('${i._id}', -1, ${i.stock})" class="w-8 h-8 text-red-500 font-bold">-</button>
                             <span class="w-8 text-center font-black">${i.stock}</span>
-                            <button onclick="stokGuncelle('${i._id}', 1, ${i.stock})" class="w-8 h-8 text-green-500 font-bold hover:bg-green-50 rounded-lg">+</button>
+                            <button onclick="stokGuncelle('${i._id}', 1, ${i.stock})" class="w-8 h-8 text-green-500 font-bold">+</button>
                         </div>
                     </td>
                     <td class="px-8 py-6 text-right">
-                        <button onclick="sil('${i._id}')" class="bg-red-600 text-white w-10 h-10 rounded-xl shadow-lg hover:scale-110 transition-all">
+                        <button onclick="sil('${i._id}')" class="bg-red-600 text-white w-10 h-10 rounded-xl shadow-lg">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </td>
                 </tr>`;
             }).join('');
-            
             totalCash = tVal;
             document.getElementById('stat-crit-count').innerText = critCount;
         }
 
+        // MAİL İÇERİĞİNDE İSİM VE KOD BİRLİKTE GİDER
         function sendDailyReport() {
-            let body = "ÖZCAN OTO SERVİS - GÜN SONU STOK YEDEK\n\n";
+            let body = "ÖZCAN OTO SERVİS - GÜN SONU STOK YEDEK\n";
+            body += "-------------------------------------------\n\n";
+            
             currentProducts.forEach(p => {
-                body += `Kod: ${p.code} | Parça: ${p.name} | Stok: ${p.stock} | Fiyat: ₺${p.price}\n`;
+                body += `PARÇA: ${p.name.toUpperCase()}\n`;
+                body += `KOD  : ${p.code}\n`;
+                body += `STOK : ${p.stock} Adet\n`;
+                body += `FİYAT: ₺${p.price.toLocaleString()}\n`;
+                body += "-------------------------------------------\n";
             });
+            
             body += `\nTOPLAM DEPO DEĞERİ: ₺${totalCash.toLocaleString()}`;
             
-            const mailto = `mailto:adanaozcanotoyedekparca@gmail.com?subject=Gun Sonu Stok Yedek&body=${encodeURIComponent(body)}`;
+            const subject = "Gun Sonu Stok Raporu - Ozcan Oto";
+            const mailto = `mailto:adanaozcanotoyedekparca@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             window.location.href = mailto;
         }
 
@@ -207,13 +205,13 @@ HTML_PANEL = r"""
 
         async function hizliEkle() {
             const p = {
-                code: document.getElementById('in-code').value,
+                code: document.getElementById('in-code').value || 'KODSUZ',
                 name: document.getElementById('in-name').value,
-                category: document.getElementById('in-cat').value,
+                category: document.getElementById('in-cat').value || 'GENEL',
                 price: parseFloat(document.getElementById('in-price').value || 0),
                 stock: 0
             };
-            if(!p.name) return;
+            if(!p.name) return alert("Parça İsmi Şart!");
             await fetch('/api/products', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -224,7 +222,7 @@ HTML_PANEL = r"""
         }
 
         async function sil(id) {
-            if(confirm('BU PARÇA SİLİNSİN Mİ?')) {
+            if(confirm('BU PARÇA TAMAMEN SİLİNSİN Mİ?')) {
                 await fetch(`/api/products/${id}`, {method: 'DELETE'});
                 yukle();
             }
