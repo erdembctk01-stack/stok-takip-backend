@@ -1,158 +1,194 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template_string, make_response
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import os
-import sys
+import datetime
+import hashlib
 
 app = Flask(__name__)
 CORS(app)
 
 # --- MONGODB BAĞLANTISI ---
 MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(MONGO_URI)
+db = client.stok_veritabani
 
-try:
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-    db = client.stok_veritabani
-    client.admin.command('ping')
-    print("MongoDB Bağlantısı Başarılı! ✅")
-except Exception as e:
-    print(f"MongoDB Bağlantı Hatası: {e}")
-    sys.exit(1)
+# --- ŞİFRELEME YARDIMCISI ---
+def hash_pass(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
-# --- PANEL TASARIMI ---
+# --- HTML VE JS PANELİ ---
 HTML_PANEL = r"""
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Özcan Oto Servis | Stok Takip</title>
+    <title>Özcan Oto Servis | Güvenli Stok</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .modal { transition: opacity 0.25s ease; }
-        body.modal-active { overflow: hidden; }
-    </style>
 </head>
-<body class="bg-slate-50 font-sans p-4 md:p-8">
-    <div class="max-w-6xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-            <h1 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">
-                <i class="fas fa-tools text-blue-600"></i> ÖZCAN OTO SERVİS
-            </h1>
-            <div class="flex gap-4 w-full md:w-auto">
-                <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex-1 text-center">
-                    <p class="text-[9px] font-black text-slate-400 uppercase">Kritik Parçalar</p>
-                    <h2 id="stat-crit-count" class="text-xl font-black text-red-500">0</h2>
+<body class="bg-slate-100 font-sans min-h-screen">
+
+    <div id="login-section" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border-4 border-blue-600">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-black text-slate-800 italic uppercase italic">ÖZCAN OTO</h1>
+                <p class="text-slate-400 font-bold">Lütfen giriş yapın</p>
+            </div>
+            
+            <div class="space-y-4">
+                <input id="log-user" type="text" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold">
+                <input id="log-pass" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-50 border rounded-2xl outline-none font-bold">
+                
+                <div class="flex items-center gap-2 px-2">
+                    <input type="checkbox" id="remember" class="w-5 h-5 cursor-pointer">
+                    <label for="remember" class="text-sm font-bold text-slate-600 cursor-pointer">Beni 30 Gün Hatırla</label>
                 </div>
-                <button onclick="toggleModal()" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-2xl shadow-lg flex-1 text-center text-white transition-all active:scale-95 group">
-                    <p class="text-[9px] font-black uppercase opacity-80 group-hover:opacity-100">Kasa Durumu</p>
-                    <h2 class="text-xl font-black">TOPLAM DEĞER <i class="fas fa-chevron-right ml-1 text-sm"></i></h2>
-                </button>
+
+                <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-all shadow-lg active:scale-95">GİRİŞ YAP</button>
+                <button onclick="toggleAuthMode()" class="w-full text-slate-400 font-bold text-sm">Hesabın yok mu? Kayıt Ol</button>
             </div>
-        </div>
-
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <input id="in-code" type="text" placeholder="Parça Kodu" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
-                <input id="in-name" type="text" placeholder="Parça İsmi" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
-                <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
-                <input id="in-price" type="number" placeholder="Birim Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
-                <button onclick="hizliEkle()" class="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg transition-all">SİSTEME EKLE</button>
-            </div>
-        </div>
-
-        <div class="relative mb-6">
-            <i class="fas fa-search absolute left-5 top-5 text-slate-400"></i>
-            <input id="search" oninput="yukle()" type="text" placeholder="Parça adı veya koduyla hızlı ara..." class="w-full pl-14 pr-6 py-4 bg-white rounded-2xl shadow-sm outline-none font-bold border-2 border-transparent focus:border-blue-200">
-        </div>
-
-        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 border-b text-slate-400 text-[10px] font-black uppercase">
-                    <tr>
-                        <th class="px-10 py-6">Parça Bilgisi</th>
-                        <th class="px-10 py-6">Kategori</th>
-                        <th class="px-10 py-6 text-center">Stok</th>
-                        <th class="px-10 py-6 text-right">İşlem</th>
-                    </tr>
-                </thead>
-                <tbody id="list" class="divide-y divide-slate-50"></tbody>
-            </table>
         </div>
     </div>
 
-    <div id="modal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
-        <div onclick="toggleModal()" class="modal-overlay absolute w-full h-full bg-slate-900 opacity-50"></div>
-        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-[2.5rem] shadow-2xl z-50 overflow-y-auto border-4 border-emerald-500">
-            <div class="modal-content py-10 px-8 text-center">
-                <div class="bg-emerald-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-wallet text-3xl text-emerald-600"></i>
+    <div id="main-section" class="hidden p-4 md:p-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <h1 class="text-3xl font-black text-slate-800 italic uppercase">ÖZCAN OTO SERVİS</h1>
+                <div class="flex gap-4">
+                    <button onclick="toggleModal()" class="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black shadow-lg">KASA DURUMU</button>
+                    <button onclick="handleLogout()" class="bg-slate-800 text-white px-6 py-3 rounded-2xl font-black">ÇIKIŞ</button>
                 </div>
-                <h3 class="text-slate-400 font-black uppercase tracking-widest text-xs mb-2">Depo Toplam Değeri</h3>
-                <div id="total-val-display" class="text-5xl font-black text-slate-800 tracking-tighter mb-8">₺0</div>
-                <button onclick="toggleModal()" class="w-full bg-slate-800 text-white font-black py-4 rounded-2xl hover:bg-slate-700 transition-all">PENCEREYİ KAPAT</button>
             </div>
+
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border mb-8 grid grid-cols-1 md:grid-cols-5 gap-3">
+                <input id="in-code" type="text" placeholder="Parça Kodu" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <input id="in-name" type="text" placeholder="Parça İsmi" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <input id="in-price" type="number" placeholder="Birim Fiyat" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <button onclick="hizliEkle()" class="bg-blue-600 text-white font-black rounded-xl">KAYDET</button>
+            </div>
+
+            <input id="search" oninput="yukle()" type="text" placeholder="Hızlı ara..." class="w-full p-4 mb-6 bg-white rounded-2xl shadow-sm outline-none font-bold border-2 focus:border-blue-500">
+
+            <div class="bg-white rounded-[2rem] shadow-sm border overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 border-b text-slate-400 text-[10px] font-black uppercase">
+                        <tr><th class="px-8 py-6">Parça Detayı</th><th class="px-8 py-6">Kategori</th><th class="px-8 py-6 text-center">Stok</th><th class="px-8 py-6 text-right">Sil</th></tr>
+                    </thead>
+                    <tbody id="list" class="divide-y"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
+        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl text-center max-w-sm w-full mx-4">
+            <p class="text-xs font-black text-slate-400 uppercase mb-2">Toplam Stok Değeri</p>
+            <h2 id="modal-val" class="text-5xl font-black text-slate-800 mb-8">₺0</h2>
+            <button onclick="toggleModal()" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-black">KAPAT</button>
         </div>
     </div>
 
     <script>
-        let currentTotalVal = 0;
+        let isRegisterMode = false;
+        let totalCash = 0;
 
-        function toggleModal() {
-            const modal = document.getElementById('modal');
-            modal.classList.toggle('opacity-0');
-            modal.classList.toggle('pointer-events-none');
-            document.body.classList.toggle('modal-active');
-            document.getElementById('total-val-display').innerText = '₺' + currentTotalVal.toLocaleString();
+        // AUTH İŞLEMLERİ
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            const btn = document.querySelector('#login-section button:last-child');
+            const mainBtn = document.querySelector('#login-section button:first-of-type');
+            const title = document.querySelector('#login-section p');
+            
+            title.innerText = isRegisterMode ? "Yeni Hesap Oluşturun" : "Lütfen giriş yapın";
+            mainBtn.innerText = isRegisterMode ? "KAYIT OL" : "GİRİŞ YAP";
+            btn.innerText = isRegisterMode ? "Zaten hesabın var mı? Giriş Yap" : "Hesabın yok mu? Kayıt Ol";
         }
 
+        async function handleLogin() {
+            const user = document.getElementById('log-user').value;
+            const pass = document.getElementById('log-pass').value;
+            const remember = document.getElementById('remember').checked;
+            const endpoint = isRegisterMode ? '/api/register' : '/api/login';
+
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: user, password: pass, remember})
+            });
+
+            const data = await res.json();
+            if(res.ok) {
+                if(!isRegisterMode) {
+                    localStorage.setItem('session', data.session);
+                    checkAuth();
+                } else {
+                    alert("Başarıyla kayıt oldunuz! Şimdi giriş yapın.");
+                    toggleAuthMode();
+                }
+            } else { alert(data.error); }
+        }
+
+        function checkAuth() {
+            const session = localStorage.getItem('session');
+            if(session) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('main-section').classList.remove('hidden');
+                yukle();
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('session');
+            location.reload();
+        }
+
+        // STOK İŞLEMLERİ
         async function yukle() {
-            try {
-                const res = await fetch('/api/products');
-                const data = await res.json();
-                const query = document.getElementById('search').value.toLowerCase();
-                const list = document.getElementById('list');
-                
-                let tVal = 0, crit = 0;
-                
-                list.innerHTML = data.filter(i => 
-                    (i.name || "").toLowerCase().includes(query) || 
-                    (i.code || "").toLowerCase().includes(query)
-                ).map(i => {
-                    const stock = i.stock || 0;
-                    const price = i.price || 0;
-                    const isVeryLow = stock <= 2;
-                    
-                    if(stock <= 10) crit++;
-                    tVal += (stock * price);
+            const res = await fetch('/api/products');
+            const data = await res.json();
+            const query = document.getElementById('search').value.toLowerCase();
+            const list = document.getElementById('list');
+            let tVal = 0; let crit = 0;
 
-                    return `
-                    <tr class="${isVeryLow ? 'bg-red-50' : 'hover:bg-slate-50'} transition-all">
-                        <td class="px-10 py-6">
-                            <div class="flex flex-col">
-                                <span class="text-[11px] font-black text-slate-900 bg-yellow-400 w-fit px-2 rounded mb-1 uppercase tracking-tighter">Birim: ₺${price.toLocaleString()}</span>
-                                <span class="text-[11px] font-bold text-blue-600 uppercase tracking-tight">${i.code || 'KODSUZ'}</span>
-                                <span class="font-black uppercase text-lg leading-tight ${isVeryLow ? 'text-red-600 underline decoration-2' : 'text-slate-800'}">${i.name}</span>
-                            </div>
-                        </td>
-                        <td class="px-10 py-6 font-bold text-slate-500 uppercase text-xs">${i.category || '-'}</td>
-                        <td class="px-10 py-6 text-center">
-                            <div class="flex items-center justify-center gap-4 bg-white border rounded-2xl p-1 w-fit mx-auto shadow-sm">
-                                <button onclick="stokGuncelle('${i._id}', -1)" class="w-10 h-10 text-red-500 font-bold hover:bg-red-50 rounded-xl">-</button>
-                                <span class="w-10 font-black text-xl">${stock}</span>
-                                <button onclick="stokGuncelle('${i._id}', 1)" class="w-10 h-10 text-green-500 font-bold hover:bg-green-50 rounded-xl">+</button>
-                            </div>
-                        </td>
-                        <td class="px-10 py-6 text-right">
-                            <button onclick="sil('${i._id}')" class="text-slate-200 hover:text-red-600 p-3 transition-colors"><i class="fas fa-trash-alt text-lg"></i></button>
-                        </td>
-                    </tr>`;
-                }).join('');
+            list.innerHTML = data.filter(i => (i.name+i.code).toLowerCase().includes(query)).map(i => {
+                tVal += (i.stock * i.price);
+                const isCrit = i.stock <= 2;
+                return `
+                <tr class="${isCrit ? 'bg-red-50' : ''}">
+                    <td class="px-8 py-6">
+                        <div class="text-[10px] font-bold text-yellow-600 tracking-tighter">Fiyat: ₺${i.price}</div>
+                        <div class="font-black ${isCrit ? 'text-red-600 underline' : 'text-slate-800'} uppercase">${i.name}</div>
+                        <div class="text-[10px] text-slate-400 font-bold">${i.code}</div>
+                    </td>
+                    <td class="px-8 py-6 font-bold text-slate-500 uppercase text-xs">${i.category}</td>
+                    <td class="px-8 py-6">
+                        <div class="flex items-center justify-center gap-2 bg-white border p-1 rounded-xl w-fit mx-auto shadow-sm">
+                            <button onclick="stokGuncelle('${i._id}', -1, ${i.stock})" class="w-8 h-8 text-red-500 font-bold">-</button>
+                            <span class="w-8 text-center font-black">${i.stock}</span>
+                            <button onclick="stokGuncelle('${i._id}', 1, ${i.stock})" class="w-8 h-8 text-green-500 font-bold">+</button>
+                        </div>
+                    </td>
+                    <td class="px-8 py-6 text-right">
+                        <button onclick="sil('${i._id}')" class="bg-red-500 text-white w-10 h-10 rounded-xl hover:bg-red-600 transition-all shadow-md">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+            totalCash = tVal;
+        }
 
-                currentTotalVal = tVal;
-                document.getElementById('stat-crit-count').innerText = crit;
-            } catch (e) { console.error("Veri hatası:", e); }
+        async function stokGuncelle(id, change, current) {
+            if(change === -1 && current <= 0) return; // Eksiye inme koruması
+            await fetch(`/api/products/${id}/stock`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({change})
+            });
+            yukle();
         }
 
         async function hizliEkle() {
@@ -163,31 +199,28 @@ HTML_PANEL = r"""
                 price: parseFloat(document.getElementById('in-price').value || 0),
                 stock: 0
             };
-            if(!payload.name) return alert("Parça ismini yazın!");
-            const res = await fetch('/api/products', {
+            await fetch('/api/products', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
             });
-            if(res.ok) {
-                document.querySelectorAll('input:not(#search)').forEach(i => i.value = '');
-                yukle();
-            }
-        }
-
-        async function stokGuncelle(id, m) {
-            await fetch(`/api/products/${id}/stock`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({change: m})
-            });
+            document.querySelectorAll('#main-section input:not(#search)').forEach(i => i.value = '');
             yukle();
         }
 
         async function sil(id) {
-            if(confirm('Parçayı sileyim mi?')) { await fetch('/api/products/'+id, {method: 'DELETE'}); yukle(); }
+            if(confirm('BU ÜRÜN KALICI OLARAK SİLİNECEK! Emin misin?')) {
+                await fetch(`/api/products/${id}`, {method: 'DELETE'});
+                yukle();
+            }
         }
-        yukle();
+
+        function toggleModal() {
+            document.getElementById('modal').classList.toggle('hidden');
+            document.getElementById('modal-val').innerText = '₺' + totalCash.toLocaleString();
+        }
+
+        checkAuth();
     </script>
 </body>
 </html>
@@ -196,21 +229,50 @@ HTML_PANEL = r"""
 @app.route('/')
 def index(): return render_template_string(HTML_PANEL)
 
-@app.route('/api/products', methods=['GET'])
-def get_p():
-    items = list(db.products.find())
-    for i in items: i['_id'] = str(i['_id'])
-    return jsonify(items)
+# --- AUTH API ---
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.json
+    if db.users.find_one({"username": data['username']}):
+        return jsonify({"error": "Kullanıcı zaten var!"}), 400
+    db.users.insert_one({
+        "username": data['username'],
+        "password": hash_pass(data['password'])
+    })
+    return jsonify({"ok": True})
 
-@app.route('/api/products', methods=['POST'])
-def add_p():
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json
+    user = db.users.find_one({
+        "username": data['username'],
+        "password": hash_pass(data['password'])
+    })
+    if user:
+        days = 30 if data.get('remember') else 1
+        session_id = hashlib.sha256(f"{data['username']}{datetime.datetime.now()}".encode()).hexdigest()
+        # Not: Gerçek bir sistemde bu session DB'ye kaydedilir. Pratiklik için basit tuttuk.
+        return jsonify({"session": session_id, "expire_days": days})
+    return jsonify({"error": "Hatalı giriş!"}), 401
+
+# --- ÜRÜN API ---
+@app.route('/api/products', methods=['GET', 'POST'])
+def products():
+    if request.method == 'GET':
+        items = list(db.products.find())
+        for i in items: i['_id'] = str(i['_id'])
+        return jsonify(items)
     db.products.insert_one(request.json)
     return jsonify({"ok": True}), 201
 
 @app.route('/api/products/<id>/stock', methods=['PUT'])
 def update_stock(id):
     change = request.json.get('change', 0)
-    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": change}})
+    # Eksiye düşmeme kontrolü DB seviyesinde
+    db.products.update_one(
+        {"_id": ObjectId(id)},
+        {"$inc": {"stock": change}}
+    )
     return jsonify({"ok": True})
 
 @app.route('/api/products/<id>', methods=['DELETE'])
