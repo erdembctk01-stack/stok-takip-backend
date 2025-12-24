@@ -12,7 +12,7 @@ MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongod
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
 
-# --- HTML VE JS PANELİ ---
+# --- PANEL TASARIMI ---
 HTML_PANEL = r"""
 <!DOCTYPE html>
 <html lang="tr">
@@ -148,22 +148,22 @@ HTML_PANEL = r"""
                 if(i.stock <= 10) critCount++;
                 tVal += (i.stock * i.price);
                 return `
-                <tr class="${isCrit ? 'bg-red-50' : 'hover:bg-slate-50'}">
+                <tr class="${isCrit ? 'bg-red-50' : 'hover:bg-slate-50'} transition-all">
                     <td class="px-8 py-6">
-                        <div class="text-[10px] font-black text-slate-900 bg-yellow-400 w-fit px-2 rounded mb-1">₺${i.price.toLocaleString()}</div>
-                        <div class="font-black ${isCrit ? 'text-red-600 underline' : 'text-slate-800'} uppercase text-lg leading-tight">${i.name}</div>
+                        <div class="text-[10px] font-black text-white bg-emerald-500 w-fit px-2 rounded mb-1 shadow-sm uppercase tracking-tighter">₺${i.price.toLocaleString()}</div>
+                        <div class="font-black ${isCrit ? 'text-red-600 underline decoration-2' : 'text-slate-800'} uppercase text-lg leading-tight">${i.name}</div>
                         <div class="text-[10px] text-slate-400 font-bold tracking-widest mt-1">${i.code}</div>
                     </td>
                     <td class="px-8 py-6 font-bold text-slate-500 uppercase text-xs">${i.category}</td>
-                    <td class="px-8 py-6">
-                        <div class="flex items-center justify-center gap-2 bg-white border p-1 rounded-xl w-fit mx-auto">
-                            <button onclick="stokGuncelle('${i._id}', -1, ${i.stock})" class="w-8 h-8 text-red-500 font-bold">-</button>
+                    <td class="px-8 py-6 text-center">
+                        <div class="flex items-center justify-center gap-2 bg-white border p-1 rounded-xl w-fit mx-auto shadow-sm">
+                            <button onclick="stokGuncelle('${i._id}', -1, ${i.stock})" class="w-8 h-8 text-red-500 font-bold hover:bg-red-50 rounded-lg">-</button>
                             <span class="w-8 text-center font-black">${i.stock}</span>
-                            <button onclick="stokGuncelle('${i._id}', 1, ${i.stock})" class="w-8 h-8 text-green-500 font-bold">+</button>
+                            <button onclick="stokGuncelle('${i._id}', 1, ${i.stock})" class="w-8 h-8 text-green-500 font-bold hover:bg-green-50 rounded-lg">+</button>
                         </div>
                     </td>
                     <td class="px-8 py-6 text-right">
-                        <button onclick="sil('${i._id}')" class="bg-red-600 text-white w-10 h-10 rounded-xl shadow-lg">
+                        <button onclick="sil('${i._id}')" class="bg-red-600 text-white w-10 h-10 rounded-xl shadow-lg hover:scale-110 transition-all">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </td>
@@ -173,22 +173,21 @@ HTML_PANEL = r"""
             document.getElementById('stat-crit-count').innerText = critCount;
         }
 
-        // MAİL İÇERİĞİNDE İSİM VE KOD BİRLİKTE GİDER
         function sendDailyReport() {
             let body = "ÖZCAN OTO SERVİS - GÜN SONU STOK YEDEK\n";
-            body += "-------------------------------------------\n\n";
+            body += "===========================================\n\n";
             
             currentProducts.forEach(p => {
-                body += `PARÇA: ${p.name.toUpperCase()}\n`;
-                body += `KOD  : ${p.code}\n`;
-                body += `STOK : ${p.stock} Adet\n`;
-                body += `FİYAT: ₺${p.price.toLocaleString()}\n`;
+                body += `PARÇA ADI : ${p.name.toUpperCase()}\n`;
+                body += `PARÇA KODU: ${p.code}\n`;
+                body += `STOK ADEDİ: ${p.stock}\n`;
+                body += `BİRİM FİYAT: ₺${p.price.toLocaleString()}\n`;
                 body += "-------------------------------------------\n";
             });
             
-            body += `\nTOPLAM DEPO DEĞERİ: ₺${totalCash.toLocaleString()}`;
+            body += `\nTOPLAM DEPO SERMAYESİ: ₺${totalCash.toLocaleString()}`;
             
-            const subject = "Gun Sonu Stok Raporu - Ozcan Oto";
+            const subject = "Ozcan Oto Gun Sonu Raporu";
             const mailto = `mailto:adanaozcanotoyedekparca@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             window.location.href = mailto;
         }
@@ -207,11 +206,11 @@ HTML_PANEL = r"""
             const p = {
                 code: document.getElementById('in-code').value || 'KODSUZ',
                 name: document.getElementById('in-name').value,
-                category: document.getElementById('in-cat').value || 'GENEL',
+                category: document.getElementById('in-cat').value || 'DİĞER',
                 price: parseFloat(document.getElementById('in-price').value || 0),
                 stock: 0
             };
-            if(!p.name) return alert("Parça İsmi Şart!");
+            if(!p.name) return alert("Parça İsmi Girmelisiniz!");
             await fetch('/api/products', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -222,7 +221,7 @@ HTML_PANEL = r"""
         }
 
         async function sil(id) {
-            if(confirm('BU PARÇA TAMAMEN SİLİNSİN Mİ?')) {
+            if(confirm('BU PARÇA SİSTEMDEN KALICI OLARAK SİLİNECEK! Emin misiniz?')) {
                 await fetch(`/api/products/${id}`, {method: 'DELETE'});
                 yukle();
             }
