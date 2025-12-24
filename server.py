@@ -21,26 +21,10 @@ HTML_PANEL = r"""
     <title>Özcan Oto Servis | Stok Takip</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* ARKA PLAN AYARI */
-        body {
-            /* BURADAKİ LİNKİ KENDİ GÖRSEL LİNKİNLE DEĞİŞTİR */
-            background-image: url('https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1920&h=904&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
-            min-height: 100vh;
-        }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-        }
-    </style>
 </head>
-<body class="font-sans">
+<body class="bg-slate-100 font-sans min-h-screen">
 
-    <div id="login-section" class="flex items-center justify-center min-h-screen bg-slate-900/50">
+    <div id="login-section" class="flex items-center justify-center min-h-screen">
         <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border-4 border-blue-600">
             <div class="text-center mb-8">
                 <i class="fas fa-user-shield text-5xl text-blue-600 mb-4"></i>
@@ -61,7 +45,7 @@ HTML_PANEL = r"""
 
     <div id="main-section" class="hidden p-4 md:p-8">
         <div class="max-w-6xl mx-auto">
-            <div class="glass-effect p-6 rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center mb-8 gap-4 shadow-xl border border-white/20">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
                     <h1 class="text-3xl font-black text-slate-800 italic uppercase">ÖZCAN OTO SERVİS</h1>
                     <div class="bg-red-500 text-white text-[10px] font-black px-3 py-1 rounded-full w-fit uppercase mt-1">
@@ -79,36 +63,36 @@ HTML_PANEL = r"""
                 </div>
             </div>
 
-            <div class="glass-effect p-6 rounded-[2rem] shadow-xl border border-white/20 mb-8 grid grid-cols-1 md:grid-cols-5 gap-3">
-                <input id="in-code" type="text" placeholder="Parça Kodu" class="p-4 bg-white/50 rounded-xl font-bold border outline-none focus:border-blue-400">
-                <input id="in-name" type="text" placeholder="Parça İsmi" class="p-4 bg-white/50 rounded-xl font-bold border outline-none focus:border-blue-400">
-                <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-white/50 rounded-xl font-bold border outline-none focus:border-blue-400">
-                <input id="in-price" type="number" placeholder="Fiyat (₺)" class="p-4 bg-white/50 rounded-xl font-bold border outline-none focus:border-blue-400">
-                <button onclick="hizliEkle()" class="bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all uppercase text-sm">Ekle</button>
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border mb-8 grid grid-cols-1 md:grid-cols-5 gap-3">
+                <input id="in-code" type="text" placeholder="Parça Kodu" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <input id="in-name" type="text" placeholder="Parça İsmi" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <input id="in-price" type="number" placeholder="Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl font-bold border outline-none">
+                <button onclick="hizliEkle()" class="bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all uppercase text-sm">Parçayı Ekle</button>
             </div>
 
             <div class="relative mb-6">
                 <i class="fas fa-search absolute left-5 top-5 text-slate-400"></i>
-                <input id="search" oninput="yukle()" type="text" placeholder="Hızlı arama yapın..." class="w-full pl-14 pr-6 py-4 glass-effect rounded-2xl shadow-xl outline-none font-bold border-2 border-transparent focus:border-blue-500">
+                <input id="search" oninput="yukle()" type="text" placeholder="Parça adı veya koduyla arama..." class="w-full pl-14 pr-6 py-4 bg-white rounded-2xl shadow-sm outline-none font-bold border-2 focus:border-blue-500">
             </div>
 
-            <div class="glass-effect rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden">
+            <div class="bg-white rounded-[2rem] shadow-sm border overflow-hidden">
                 <table class="w-full text-left">
-                    <thead class="bg-slate-800/5 text-slate-500 text-[10px] font-black uppercase">
+                    <thead class="bg-slate-50 border-b text-slate-400 text-[10px] font-black uppercase">
                         <tr><th class="px-8 py-6">Parça Detayı</th><th class="px-8 py-6">Kategori</th><th class="px-8 py-6 text-center">Stok</th><th class="px-8 py-6 text-right">Sil</th></tr>
                     </thead>
-                    <tbody id="list" class="divide-y divide-slate-100"></tbody>
+                    <tbody id="list" class="divide-y"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <div id="modal" class="hidden fixed inset-0 bg-slate-900/80 flex items-center justify-center z-50 p-4">
+    <div id="modal" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
         <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl text-center max-w-sm w-full border-b-8 border-emerald-500">
             <i class="fas fa-money-bill-wave text-5xl text-emerald-500 mb-4"></i>
-            <p class="text-xs font-black text-slate-400 uppercase mb-2 tracking-widest">Toplam Sermaye</p>
+            <p class="text-xs font-black text-slate-400 uppercase mb-2 tracking-widest">Depodaki Toplam Sermaye</p>
             <h2 id="modal-val" class="text-4xl font-black text-slate-800 mb-8 tracking-tighter">₺0</h2>
-            <button onclick="toggleModal()" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-black uppercase text-sm">Kapat</button>
+            <button onclick="toggleModal()" class="w-full bg-slate-800 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-sm">Kapat</button>
         </div>
     </div>
 
@@ -164,7 +148,7 @@ HTML_PANEL = r"""
                 if(i.stock <= 10) critCount++;
                 tVal += (i.stock * i.price);
                 return `
-                <tr class="${isCrit ? 'bg-red-50/80' : 'hover:bg-white/40'} transition-all">
+                <tr class="${isCrit ? 'bg-red-50' : 'hover:bg-slate-50'} transition-all">
                     <td class="px-8 py-6">
                         <div class="text-[10px] font-black text-white bg-emerald-500 w-fit px-2 rounded mb-1 shadow-sm uppercase tracking-tighter">₺${i.price.toLocaleString()}</div>
                         <div class="font-black ${isCrit ? 'text-red-600 underline decoration-2' : 'text-slate-800'} uppercase text-lg leading-tight">${i.name}</div>
@@ -172,9 +156,9 @@ HTML_PANEL = r"""
                     </td>
                     <td class="px-8 py-6 font-bold text-slate-500 uppercase text-xs">${i.category}</td>
                     <td class="px-8 py-6 text-center">
-                        <div class="flex items-center justify-center gap-2 bg-white/80 border p-1 rounded-xl w-fit mx-auto shadow-sm">
+                        <div class="flex items-center justify-center gap-2 bg-white border p-1 rounded-xl w-fit mx-auto shadow-sm">
                             <button onclick="stokGuncelle('${i._id}', -1, ${i.stock})" class="w-8 h-8 text-red-500 font-bold hover:bg-red-50 rounded-lg">-</button>
-                            <span class="w-8 text-center font-black text-lg">${i.stock}</span>
+                            <span class="w-8 text-center font-black">${i.stock}</span>
                             <button onclick="stokGuncelle('${i._id}', 1, ${i.stock})" class="w-8 h-8 text-green-500 font-bold hover:bg-green-50 rounded-lg">+</button>
                         </div>
                     </td>
@@ -190,13 +174,21 @@ HTML_PANEL = r"""
         }
 
         function sendDailyReport() {
-            let body = "ÖZCAN OTO SERVİS - GÜN SONU RAPORU\n";
-            body += "===================================\n\n";
+            let body = "ÖZCAN OTO SERVİS - GÜN SONU STOK YEDEK\n";
+            body += "===========================================\n\n";
+            
             currentProducts.forEach(p => {
-                body += `PARÇA: ${p.name.toUpperCase()}\nKOD: ${p.code}\nSTOK: ${p.stock}\nFİYAT: ₺${p.price.toLocaleString()}\n-------------------\n`;
+                body += `PARÇA ADI : ${p.name.toUpperCase()}\n`;
+                body += `PARÇA KODU: ${p.code}\n`;
+                body += `STOK ADEDİ: ${p.stock}\n`;
+                body += `BİRİM FİYAT: ₺${p.price.toLocaleString()}\n`;
+                body += "-------------------------------------------\n";
             });
-            body += `\nTOPLAM SERMAYE: ₺${totalCash.toLocaleString()}`;
-            const mailto = `mailto:adanaozcanotoyedekparca@gmail.com?subject=Ozcan Oto Rapor&body=${encodeURIComponent(body)}`;
+            
+            body += `\nTOPLAM DEPO SERMAYESİ: ₺${totalCash.toLocaleString()}`;
+            
+            const subject = "Ozcan Oto Gun Sonu Raporu";
+            const mailto = `mailto:adanaozcanotoyedekparca@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             window.location.href = mailto;
         }
 
@@ -218,7 +210,7 @@ HTML_PANEL = r"""
                 price: parseFloat(document.getElementById('in-price').value || 0),
                 stock: 0
             };
-            if(!p.name) return alert("Parça İsmi Şart!");
+            if(!p.name) return alert("Parça İsmi Girmelisiniz!");
             await fetch('/api/products', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -229,7 +221,7 @@ HTML_PANEL = r"""
         }
 
         async function sil(id) {
-            if(confirm('BU PARÇA SİLİNSİN Mİ?')) {
+            if(confirm('BU PARÇA SİSTEMDEN KALICI OLARAK SİLİNECEK! Emin misiniz?')) {
                 await fetch(`/api/products/${id}`, {method: 'DELETE'});
                 yukle();
             }
