@@ -1,6 +1,4 @@
-fastapi
-uvicorn
-motor
-python-dotenv
-bcrypt
-pyjwt
+flask
+flask-pymongo
+flask-cors
+dnspython
