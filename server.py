@@ -139,10 +139,10 @@ HTML_PANEL = r"""
                         <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Kritik Limit</p>
                         <h4 id="dash-crit" class="text-5xl font-black text-red-600 mt-2">0</h4>
                     </div>
-                    <div class="custom-card p-10 border-b-8 border-emerald-500">
-                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Müşteriler</p>
-                        <h4 id="dash-cari" class="text-5xl font-black text-slate-800 mt-2">0</h4>
-                    </div>
+                    <button onclick="hesaplaTotalPara()" class="custom-card p-10 border-b-8 border-emerald-500 hover:bg-emerald-50 transition-all text-left">
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Total Para</p>
+                        <h4 class="text-4xl font-black text-emerald-600 mt-2 italic flex items-center gap-2">HESAPLA <i class="fas fa-calculator text-xl"></i></h4>
+                    </button>
                 </div>
                 <div class="bg-slate-900 p-12 rounded-[3.5rem] shadow-2xl text-white">
                     <h4 class="text-2xl font-black mb-8 uppercase italic text-orange-500">Raporlama Merkezi</h4>
@@ -326,10 +326,41 @@ HTML_PANEL = r"""
             const data = await res.json();
             if(data.error) alert(data.error);
             else {
-                alert("Fatura başarıyla kesildi, stok güncellendi!");
+                alert("Fatura başarıyla kesildi, stok güncellendi ve cari kayıt yapıldı!");
                 document.getElementById('fat-adet').value = '';
                 yukleFatura();
             }
+        }
+
+        // --- DASHBOARD TOTAL PARA HESAPLAMA ---
+        async function hesaplaTotalPara() {
+            const [pRes, gRes, fRes] = await Promise.all([fetch('/api/products'), fetch('/api/expenses'), fetch('/api/invoices')]);
+            const products = await pRes.json();
+            const expenses = await gRes.json();
+            const invoices = await fRes.json();
+
+            // Bugünün tarihini al (GÜNLÜK HESAP İÇİN)
+            const bugun = new Date().toLocaleDateString('tr-TR');
+
+            let stokDegeri = 0;
+            products.forEach(p => stokDegeri += (p.stock * p.price));
+
+            let gunlukGider = 0;
+            expenses.filter(e => e.tarih === bugun).forEach(e => gunlukGider += e.tutar);
+
+            let gunlukKazanc = 0;
+            invoices.filter(i => i.tarih.includes(bugun)).forEach(i => {
+                const parca = products.find(p => p._id === i.parca_id);
+                if(parca) gunlukKazanc += (i.adet * parca.price);
+            });
+
+            alert(
+                `📊 ÖZCAN OTO - GÜNLÜK FİNANSAL ÖZET (${bugun})\n\n` +
+                `🔹 GÜNLÜK KAZANÇ (Fatura): ₺${gunlukKazanc.toLocaleString('tr-TR')}\n` +
+                `🔸 GÜNLÜK GİDER: ₺${gunlukGider.toLocaleString('tr-TR')}\n` +
+                `💰 NET DURUM: ₺${(gunlukKazanc - gunlukGider).toLocaleString('tr-TR')}\n\n` +
+                `📦 TÜM PARÇALARIN TOPLAM DEĞERİ: ₺${stokDegeri.toLocaleString('tr-TR')}`
+            );
         }
 
         function exportStokListesi() {
@@ -356,7 +387,6 @@ HTML_PANEL = r"""
             products = p;
             document.getElementById('dash-count').innerText = p.length;
             document.getElementById('dash-crit').innerText = p.filter(x => x.stock <= 2).length;
-            document.getElementById('dash-cari').innerText = c.length;
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             totalVal = 0; p.forEach(i => totalVal += (i.stock * i.price));
         }
@@ -424,14 +454,12 @@ def handle_api(col):
 def handle_delete(col, id):
     db[col].delete_one({"_id": ObjectId(id)}); return jsonify({"ok": True})
 
-# --- MANUEL STOK GÜNCELLEME ---
 @app.route('/api/products/<id>/update', methods=['POST'])
 def update_stock(id):
     degisim = request.json.get('degisim', 0)
     db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": degisim}})
     return jsonify({"ok": True})
 
-# --- PARAŞÜT FATURA SİSTEMİ ---
 @app.route('/api/fatura-kes', methods=['POST'])
 def fatura_kes():
     data = request.json
@@ -444,15 +472,25 @@ def fatura_kes():
     db.products.update_one({"_id": ObjectId(data['parcaId'])}, {"$inc": {"stock": -data['adet']}})
     
     # 2. Faturayı kaydet
-    fatura = {
+    db.invoices.insert_one({
         "ad": data['ad'],
         "tel": data['tel'],
         "parca_id": data['parcaId'],
         "parca_ad": parca['name'],
         "adet": data['adet'],
         "tarih": data['tarih']
-    }
-    db.invoices.insert_one(fatura)
+    })
+
+    # 3. CARİ KAYITLARA OTOMATİK EKLE
+    # Eğer müşteri zaten kayıtlı değilse ekle
+    mevcut_cari = db.customers.find_one({"ad": data['ad']})
+    if not mevcut_cari:
+        db.customers.insert_one({
+            "ad": data['ad'],
+            "tel": data['tel'],
+            "tarih": data['tarih'].split(' ')[0] # Sadece tarih kısmını al
+        })
+        
     return jsonify({"ok": True})
 
 if __name__ == '__main__':
