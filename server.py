@@ -33,6 +33,7 @@ HTML_PANEL = r"""
         .active-section { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .orange-card { border-left: 8px solid #f97316; }
+        .critical-row { background-color: #fee2e2 !important; border-left: 6px solid #ef4444; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -111,7 +112,7 @@ HTML_PANEL = r"""
                     </div>
                     <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border-b-8 border-red-500">
                         <i class="fas fa-exclamation-circle text-red-500 text-2xl mb-4"></i>
-                        <p class="text-xs font-black text-slate-400 uppercase">Kritik Stok (Azalan)</p>
+                        <p class="text-xs font-black text-slate-400 uppercase">Kritik Stok (2 ve Altı)</p>
                         <h4 id="dash-crit" class="text-4xl font-black text-red-600">0</h4>
                     </div>
                     <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border-b-8 border-emerald-500">
@@ -142,11 +143,13 @@ HTML_PANEL = r"""
                 </div>
 
                 <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-10">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <input id="in-code" type="text" placeholder="Parça Kodu" class="p-4 bg-slate-50 rounded-2xl font-bold border-none ring-2 ring-slate-100 focus:ring-orange-500">
                         <input id="in-name" type="text" placeholder="Parça Adı" class="p-4 bg-slate-50 rounded-2xl font-bold border-none ring-2 ring-slate-100 focus:ring-orange-500">
+                        <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-2xl font-bold border-none ring-2 ring-slate-100 focus:ring-orange-500">
                         <input id="in-price" type="number" placeholder="Fiyat (₺)" class="p-4 bg-slate-50 rounded-2xl font-bold border-none ring-2 ring-slate-100 focus:ring-orange-500">
-                        <button onclick="hizliEkle()" class="bg-orange-500 text-white font-black rounded-2xl hover:bg-orange-600 shadow-xl shadow-orange-100 transition-all uppercase">Kaydet</button>
+                        <input id="in-stock" type="number" placeholder="Stok (Boşsa 1)" class="p-4 bg-slate-50 rounded-2xl font-bold border-none ring-2 ring-slate-100 focus:ring-orange-500">
+                        <button onclick="hizliEkle()" class="md:col-span-5 bg-orange-500 text-white font-black rounded-2xl py-4 hover:bg-orange-600 shadow-xl shadow-orange-100 transition-all uppercase">Kaydet</button>
                     </div>
                 </div>
 
@@ -155,6 +158,7 @@ HTML_PANEL = r"""
                         <thead class="bg-slate-50 border-b text-slate-400 text-[10px] font-black uppercase tracking-widest">
                             <tr>
                                 <th class="px-8 py-7">Parça Detayı</th>
+                                <th class="px-8 py-7">Kategori</th>
                                 <th class="px-8 py-7 text-center">Stok</th>
                                 <th class="px-8 py-7 text-right">Birim Fiyat</th>
                                 <th class="px-8 py-7 text-right">Sil</th>
@@ -241,6 +245,7 @@ HTML_PANEL = r"""
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('main-section').classList.remove('hidden');
                 showPage('dashboard');
+                yukleStok();
             } else { alert("Hatalı Giriş!"); }
         }
 
@@ -253,20 +258,24 @@ HTML_PANEL = r"""
             let tV = 0;
 
             document.getElementById('stok-list').innerHTML = products
-                .filter(i => (i.name+i.code).toLowerCase().includes(q))
+                .filter(i => (i.name + i.code + (i.category || '')).toLowerCase().includes(q))
+                .reverse()
                 .map(i => {
                     tV += (i.stock * i.price);
-                    const zero = i.stock <= 0;
+                    const isCritical = i.stock <= 2;
                     return `
-                    <tr class="${zero ? 'bg-slate-50/50' : 'hover:bg-orange-50/30'} group transition-all">
+                    <tr class="${isCritical ? 'critical-row' : 'hover:bg-orange-50/30'} group transition-all">
                         <td class="px-8 py-7">
-                            <div class="font-black ${zero ? 'text-slate-400' : 'text-slate-800'} text-lg uppercase tracking-tight">${i.name}</div>
+                            <div class="font-black ${isCritical ? 'text-red-700' : 'text-slate-800'} text-lg uppercase tracking-tight">${i.name}</div>
                             <div class="text-[10px] font-black text-orange-500 uppercase tracking-widest mt-1">${i.code}</div>
+                        </td>
+                        <td class="px-8 py-7">
+                            <span class="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-black text-slate-500 uppercase">${i.category || 'GENEL'}</span>
                         </td>
                         <td class="px-8 py-7 text-center">
                             <div class="flex items-center justify-center gap-3 bg-white border border-slate-200 p-2 rounded-2xl w-fit mx-auto shadow-sm">
                                 <button onclick="stokGuncelle('${i._id}',-1)" class="w-10 h-10 text-red-500 font-black hover:bg-red-50 rounded-xl transition-all">-</button>
-                                <span class="w-12 text-center font-black text-xl ${zero ? 'text-red-500' : 'text-slate-800'}">${i.stock}</span>
+                                <span class="w-12 text-center font-black text-xl ${isCritical ? 'text-red-600' : 'text-slate-800'}">${i.stock}</span>
                                 <button onclick="stokGuncelle('${i._id}',1)" class="w-10 h-10 text-emerald-500 font-black hover:bg-emerald-50 rounded-xl transition-all">+</button>
                             </div>
                         </td>
@@ -285,17 +294,38 @@ HTML_PANEL = r"""
             const g = await gRes.json();
             const c = await cRes.json();
             
-            let crit = p.filter(x => x.stock <= 5).length;
+            let crit = p.filter(x => x.stock <= 2).length;
             document.getElementById('dash-count').innerText = p.length;
             document.getElementById('dash-crit').innerText = crit;
             document.getElementById('dash-cari').innerText = c.length;
         }
 
         async function hizliEkle() {
-            const p = { code: document.getElementById('in-code').value || 'KODSUZ', name: document.getElementById('in-name').value, price: parseFloat(document.getElementById('in-price').value || 0), stock: 0 };
-            if(!p.name) return alert("Parça adı boş olamaz!");
+            const codeInput = document.getElementById('in-code').value;
+            const nameInput = document.getElementById('in-name').value;
+            const catInput = document.getElementById('in-cat').value;
+            const priceInput = document.getElementById('in-price').value;
+            const stockInput = document.getElementById('in-stock').value;
+
+            if(!nameInput) return alert("Parça adı boş olamaz!");
+
+            const p = { 
+                code: codeInput || 'KODSUZ', 
+                name: nameInput, 
+                category: catInput || 'GENEL',
+                price: parseFloat(priceInput || 0), 
+                stock: stockInput === "" ? 1 : parseInt(stockInput)
+            };
+
             await fetch('/api/products', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(p) });
-            document.getElementById('in-name').value = ''; document.getElementById('in-code').value = ''; document.getElementById('in-price').value = '';
+            
+            // Alanları Temizle
+            document.getElementById('in-name').value = ''; 
+            document.getElementById('in-code').value = ''; 
+            document.getElementById('in-price').value = '';
+            document.getElementById('in-cat').value = '';
+            document.getElementById('in-stock').value = '';
+            
             yukleStok();
         }
 
@@ -374,17 +404,14 @@ HTML_PANEL = r"""
 
         function closeFinanceModal() { document.getElementById('finance-modal').classList.add('hidden'); }
 
-        function sendDailyReport() {
-            let body = "ÖZCAN OTO PRO RAPOR\n\n";
-            products.forEach(p => { body += `${p.name} [${p.code}] - Stok: ${p.stock}\n`; });
-            window.location.href = `mailto:adanaozcanotoyedekparca@gmail.com?subject=Ozcan Oto Rapor&body=${encodeURIComponent(body)}`;
-        }
-
-        if(localStorage.getItem('pro_session')) {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('main-section').classList.remove('hidden');
-            showPage('dashboard');
-        }
+        window.onload = () => {
+            if(localStorage.getItem('pro_session')) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('main-section').classList.remove('hidden');
+                showPage('dashboard');
+                yukleStok();
+            }
+        };
     </script>
 </body>
 </html>
