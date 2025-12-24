@@ -9,23 +9,19 @@ app = Flask(__name__)
 CORS(app)
 
 # --- MONGODB BAĞLANTISI ---
-# Şifreni Erdem12345 olarak güncellediğini varsayıyorum.
+# Yeni şifrenle güncellendi: Dyta96252
 MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
 
 try:
-    # Bağlantı zaman aşımını 5 saniye olarak ayarladık
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
     db = client.stok_veritabani
-    # Bağlantıyı doğrula
     client.admin.command('ping')
     print("MongoDB Bağlantısı Başarılı! ✅")
 except Exception as e:
     print(f"MongoDB Bağlantı Hatası: {e}")
-    # Bağlantı olmazsa Render servisi durdurur ve hatayı loglara yazar
     sys.exit(1)
 
-# --- PANEL TASARIMI (Raw String Kullanıldı) ---
-# r""" kullanımı loglardaki "invalid escape sequence" uyarısını çözer
+# --- PANEL TASARIMI (Gelişmiş Tablo Görünümü) ---
 HTML_PANEL = r"""
 <!DOCTYPE html>
 <html lang="tr">
@@ -43,7 +39,7 @@ HTML_PANEL = r"""
                 <h2 id="stat-total-items" class="text-4xl font-black text-slate-800 mt-2">0</h2>
             </div>
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-red-100">
-                <p class="text-red-400 text-[10px] font-black uppercase tracking-widest">Kritik Stok</p>
+                <p class="text-red-400 text-[10px] font-black uppercase tracking-widest">Kritik Stok Sayısı</p>
                 <h2 id="stat-crit-count" class="text-4xl font-black text-red-500 mt-2">0</h2>
             </div>
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100">
@@ -57,7 +53,7 @@ HTML_PANEL = r"""
                 <input id="in-code" type="text" placeholder="Ürün Kodu" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border">
                 <input id="in-name" type="text" placeholder="Ürün İsmi" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border">
                 <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border">
-                <input id="in-price" type="number" placeholder="Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border">
+                <input id="in-price" type="number" placeholder="Birim Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border">
                 <button onclick="hizliEkle()" class="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg transition-all active:scale-95">KAYDET</button>
             </div>
         </div>
@@ -70,7 +66,12 @@ HTML_PANEL = r"""
         <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
             <table class="w-full text-left">
                 <thead class="bg-slate-50 border-b text-slate-400 text-[10px] font-black uppercase">
-                    <tr><th class="px-10 py-6">Ürün Bilgisi</th><th class="px-10 py-6">Kategori</th><th class="px-10 py-6 text-center">Stok</th><th class="px-10 py-6 text-right">İşlem</th></tr>
+                    <tr>
+                        <th class="px-10 py-6">Ürün Detayı</th>
+                        <th class="px-10 py-6">Kategori</th>
+                        <th class="px-10 py-6 text-center">Stok Kontrol</th>
+                        <th class="px-10 py-6 text-right">İşlem</th>
+                    </tr>
                 </thead>
                 <tbody id="list" class="divide-y divide-slate-50"></tbody>
             </table>
@@ -91,22 +92,30 @@ HTML_PANEL = r"""
                     (i.name || "").toLowerCase().includes(query) || 
                     (i.code || "").toLowerCase().includes(query)
                 ).map(i => {
-                    if(i.stock <= 10) crit++;
-                    tStock += i.stock;
-                    tVal += (i.stock * (i.price || 0));
+                    const stock = i.stock || 0;
+                    const price = i.price || 0;
+                    const isCrit = stock <= 10;
+                    
+                    if(isCrit) crit++;
+                    tStock += stock;
+                    tVal += (stock * price);
                     count++;
+
                     return `
-                    <tr class="hover:bg-slate-50">
+                    <tr class="${isCrit ? 'bg-red-50/50' : 'hover:bg-slate-50'} transition-all">
                         <td class="px-10 py-6">
-                            <div class="text-[10px] font-black text-blue-600 uppercase">${i.code || 'KODSUZ'}</div>
-                            <div class="font-black text-slate-800 uppercase text-lg">${i.name}</div>
+                            <div class="flex flex-col">
+                                <span class="text-[9px] font-black text-slate-400 uppercase">Fiyat: ₺${price.toLocaleString()} | Kritik: 10</span>
+                                <span class="text-[11px] font-black text-blue-600 uppercase tracking-tight">${i.code || 'KODSUZ'}</span>
+                                <span class="font-black text-slate-800 uppercase text-lg leading-tight">${i.name}</span>
+                            </div>
                         </td>
                         <td class="px-10 py-6 font-bold text-slate-500 uppercase text-sm">${i.category || '-'}</td>
                         <td class="px-10 py-6 text-center">
-                            <div class="flex items-center justify-center gap-4 bg-white border rounded-2xl p-1 w-fit mx-auto">
-                                <button onclick="stokGuncelle('${i._id}', -1)" class="w-10 h-10 text-red-500 font-bold">-</button>
-                                <span class="w-10 font-black text-xl">${i.stock}</span>
-                                <button onclick="stokGuncelle('${i._id}', 1)" class="w-10 h-10 text-green-500 font-bold">+</button>
+                            <div class="flex items-center justify-center gap-4 bg-white border rounded-2xl p-1 w-fit mx-auto shadow-sm">
+                                <button onclick="stokGuncelle('${i._id}', -1)" class="w-10 h-10 text-red-500 font-bold hover:bg-red-50 rounded-xl">-</button>
+                                <span class="w-10 font-black text-xl">${stock}</span>
+                                <button onclick="stokGuncelle('${i._id}', 1)" class="w-10 h-10 text-green-500 font-bold hover:bg-green-50 rounded-xl">+</button>
                             </div>
                         </td>
                         <td class="px-10 py-6 text-right">
@@ -118,7 +127,7 @@ HTML_PANEL = r"""
                 document.getElementById('stat-total-items').innerText = count;
                 document.getElementById('stat-crit-count').innerText = crit;
                 document.getElementById('stat-total-val').innerText = '₺' + tVal.toLocaleString();
-            } catch (e) { console.log("Yükleniyor..."); }
+            } catch (e) { console.error("Veri hatası:", e); }
         }
 
         async function hizliEkle() {
@@ -130,7 +139,7 @@ HTML_PANEL = r"""
                 stock: 0
             };
 
-            if(!payload.name) return alert("İsim gerekli!");
+            if(!payload.name) return alert("Lütfen ürün ismi girin!");
 
             const res = await fetch('/api/products', {
                 method: 'POST',
@@ -159,7 +168,7 @@ HTML_PANEL = r"""
         }
 
         async function sil(id) {
-            if(confirm('Silinsin mi?')) { await fetch('/api/products/'+id, {method: 'DELETE'}); yukle(); }
+            if(confirm('Ürün silinsin mi?')) { await fetch('/api/products/'+id, {method: 'DELETE'}); yukle(); }
         }
         yukle();
     </script>
