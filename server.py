@@ -29,6 +29,10 @@ HTML_PANEL = r"""
     <title>Özcan Oto Servis | Stok Takip</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow: hidden; }
+    </style>
 </head>
 <body class="bg-slate-50 font-sans p-4 md:p-8">
     <div class="max-w-6xl mx-auto">
@@ -38,13 +42,13 @@ HTML_PANEL = r"""
             </h1>
             <div class="flex gap-4 w-full md:w-auto">
                 <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex-1 text-center">
-                    <p class="text-[9px] font-black text-slate-400 uppercase">Kritik Stok</p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Kritik Parçalar</p>
                     <h2 id="stat-crit-count" class="text-xl font-black text-red-500">0</h2>
                 </div>
-                <div class="bg-emerald-500 px-6 py-3 rounded-2xl shadow-lg flex-1 text-center text-white">
-                    <p class="text-[9px] font-black uppercase opacity-80">Toplam Değer</p>
-                    <h2 id="stat-total-val" class="text-xl font-black">₺0</h2>
-                </div>
+                <button onclick="toggleModal()" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-2xl shadow-lg flex-1 text-center text-white transition-all active:scale-95 group">
+                    <p class="text-[9px] font-black uppercase opacity-80 group-hover:opacity-100">Kasa Durumu</p>
+                    <h2 class="text-xl font-black">TOPLAM DEĞER <i class="fas fa-chevron-right ml-1 text-sm"></i></h2>
+                </button>
             </div>
         </div>
 
@@ -54,7 +58,7 @@ HTML_PANEL = r"""
                 <input id="in-name" type="text" placeholder="Parça İsmi" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
                 <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
                 <input id="in-price" type="number" placeholder="Birim Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
-                <button onclick="hizliEkle()" class="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg transition-all active:scale-95">SİSTEME KAYDET</button>
+                <button onclick="hizliEkle()" class="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg transition-all">SİSTEME EKLE</button>
             </div>
         </div>
 
@@ -69,7 +73,7 @@ HTML_PANEL = r"""
                     <tr>
                         <th class="px-10 py-6">Parça Bilgisi</th>
                         <th class="px-10 py-6">Kategori</th>
-                        <th class="px-10 py-6 text-center">Mevcut Stok</th>
+                        <th class="px-10 py-6 text-center">Stok</th>
                         <th class="px-10 py-6 text-right">İşlem</th>
                     </tr>
                 </thead>
@@ -78,7 +82,31 @@ HTML_PANEL = r"""
         </div>
     </div>
 
+    <div id="modal" class="modal opacity-0 pointer-events-none fixed w-full h-full top-0 left-0 flex items-center justify-center z-50">
+        <div onclick="toggleModal()" class="modal-overlay absolute w-full h-full bg-slate-900 opacity-50"></div>
+        <div class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded-[2.5rem] shadow-2xl z-50 overflow-y-auto border-4 border-emerald-500">
+            <div class="modal-content py-10 px-8 text-center">
+                <div class="bg-emerald-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-wallet text-3xl text-emerald-600"></i>
+                </div>
+                <h3 class="text-slate-400 font-black uppercase tracking-widest text-xs mb-2">Depo Toplam Değeri</h3>
+                <div id="total-val-display" class="text-5xl font-black text-slate-800 tracking-tighter mb-8">₺0</div>
+                <button onclick="toggleModal()" class="w-full bg-slate-800 text-white font-black py-4 rounded-2xl hover:bg-slate-700 transition-all">PENCEREYİ KAPAT</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let currentTotalVal = 0;
+
+        function toggleModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.toggle('opacity-0');
+            modal.classList.toggle('pointer-events-none');
+            document.body.classList.toggle('modal-active');
+            document.getElementById('total-val-display').innerText = '₺' + currentTotalVal.toLocaleString();
+        }
+
         async function yukle() {
             try {
                 const res = await fetch('/api/products');
@@ -94,7 +122,7 @@ HTML_PANEL = r"""
                 ).map(i => {
                     const stock = i.stock || 0;
                     const price = i.price || 0;
-                    const isVeryLow = stock <= 2; // Stok 2 veya altındaysa
+                    const isVeryLow = stock <= 2;
                     
                     if(stock <= 10) crit++;
                     tVal += (stock * price);
@@ -105,7 +133,7 @@ HTML_PANEL = r"""
                             <div class="flex flex-col">
                                 <span class="text-[11px] font-black text-slate-900 bg-yellow-400 w-fit px-2 rounded mb-1 uppercase tracking-tighter">Birim: ₺${price.toLocaleString()}</span>
                                 <span class="text-[11px] font-bold text-blue-600 uppercase tracking-tight">${i.code || 'KODSUZ'}</span>
-                                <span class="font-black uppercase text-lg leading-tight ${isVeryLow ? 'text-red-600 underline' : 'text-slate-800'}">${i.name}</span>
+                                <span class="font-black uppercase text-lg leading-tight ${isVeryLow ? 'text-red-600 underline decoration-2' : 'text-slate-800'}">${i.name}</span>
                             </div>
                         </td>
                         <td class="px-10 py-6 font-bold text-slate-500 uppercase text-xs">${i.category || '-'}</td>
@@ -117,13 +145,13 @@ HTML_PANEL = r"""
                             </div>
                         </td>
                         <td class="px-10 py-6 text-right">
-                            <button onclick="sil('${i._id}')" class="text-slate-300 hover:text-red-600 p-3"><i class="fas fa-trash-alt text-lg"></i></button>
+                            <button onclick="sil('${i._id}')" class="text-slate-200 hover:text-red-600 p-3 transition-colors"><i class="fas fa-trash-alt text-lg"></i></button>
                         </td>
                     </tr>`;
                 }).join('');
 
+                currentTotalVal = tVal;
                 document.getElementById('stat-crit-count').innerText = crit;
-                document.getElementById('stat-total-val').innerText = '₺' + tVal.toLocaleString();
             } catch (e) { console.error("Veri hatası:", e); }
         }
 
@@ -135,20 +163,14 @@ HTML_PANEL = r"""
                 price: parseFloat(document.getElementById('in-price').value || 0),
                 stock: 0
             };
-
-            if(!payload.name) return alert("Parça ismini yazmalısınız!");
-
+            if(!payload.name) return alert("Parça ismini yazın!");
             const res = await fetch('/api/products', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
             });
-
             if(res.ok) {
-                document.getElementById('in-code').value = '';
-                document.getElementById('in-name').value = '';
-                document.getElementById('in-cat').value = '';
-                document.getElementById('in-price').value = '';
+                document.querySelectorAll('input:not(#search)').forEach(i => i.value = '');
                 yukle();
             }
         }
@@ -163,10 +185,7 @@ HTML_PANEL = r"""
         }
 
         async function sil(id) {
-            if(confirm('Parçayı silmek istediğinize emin misiniz?')) { 
-                await fetch('/api/products/'+id, {method: 'DELETE'}); 
-                yukle(); 
-            }
+            if(confirm('Parçayı sileyim mi?')) { await fetch('/api/products/'+id, {method: 'DELETE'}); yukle(); }
         }
         yukle();
     </script>
