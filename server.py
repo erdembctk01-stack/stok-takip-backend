@@ -114,6 +114,9 @@ HTML_PANEL = r"""
                 <div onclick="showPage('gider')" id="btn-gider" class="sidebar-link w-full flex items-center gap-4 p-5 font-bold">
                     <i class="fas fa-wallet"></i> Gider Takibi
                 </div>
+                <div onclick="hesaplaTotalPara()" class="sidebar-link w-full flex items-center gap-4 p-5 font-bold text-emerald-400 border border-emerald-500/20 mt-4">
+                    <i class="fas fa-calculator"></i> Total Para
+                </div>
             </nav>
 
             <div class="p-8">
@@ -126,25 +129,28 @@ HTML_PANEL = r"""
         <main class="flex-1 relative overflow-hidden">
             
             <div id="page-dashboard" class="page-content active-section p-10 lg:p-16">
-                <div class="mb-12">
-                    <h3 class="text-4xl font-black text-slate-800 uppercase italic">Genel Durum</h3>
-                    <p id="current-date" class="text-slate-400 font-bold mt-2 text-lg"></p>
+                <div class="flex justify-between items-start mb-12">
+                    <div>
+                        <h3 class="text-4xl font-black text-slate-800 uppercase italic">Genel Durum</h3>
+                        <p id="current-date" class="text-slate-400 font-bold mt-2 text-lg"></p>
+                    </div>
+                    <div class="text-right">
+                        <h4 class="text-xl font-black text-slate-800 italic uppercase">Hoş geldin Eren Usta</h4>
+                        <p class="text-orange-500 font-black text-xs uppercase tracking-widest">Özcanoto yedek parça stok</p>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
                     <div class="custom-card p-10 border-b-8 border-orange-500">
-                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Envanter</p>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Mevcut Stok</p>
                         <h4 id="dash-count" class="text-5xl font-black text-slate-800 mt-2">0</h4>
                     </div>
                     <div class="custom-card p-10 border-b-8 border-red-500">
-                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Kritik Limit</p>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Kritik Stok</p>
                         <h4 id="dash-crit" class="text-5xl font-black text-red-600 mt-2">0</h4>
                     </div>
-                    
-                    <button onclick="hesaplaTotalPara()" class="custom-card p-10 border-b-8 border-emerald-500 hover:bg-emerald-50 transition-all text-left block w-full outline-none focus:outline-none">
-                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest pointer-events-none">Total Para</p>
-                        <h4 class="text-4xl font-black text-emerald-600 mt-2 italic flex items-center gap-2 pointer-events-none">HESAPLA <i class="fas fa-calculator text-xl"></i></h4>
-                    </button>
                 </div>
+
                 <div class="bg-slate-900 p-12 rounded-[3.5rem] shadow-2xl text-white">
                     <h4 class="text-2xl font-black mb-8 uppercase italic text-orange-500">Raporlama Merkezi</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -354,10 +360,9 @@ HTML_PANEL = r"""
             });
 
             alert(
-                `📊 ÖZCAN OTO - GÜNLÜK FİNANSAL ÖZET (${bugun})\n\n` +
-                `🔹 GÜNLÜK KAZANÇ (Fatura): ₺${gunlukKazanc.toLocaleString('tr-TR')}\n` +
+                `📊 ÖZCAN OTO - FİNANSAL ÖZET\n\n` +
+                `🔹 GÜNLÜK KAZANÇ (Faturalar): ₺${gunlukKazanc.toLocaleString('tr-TR')}\n` +
                 `🔸 GÜNLÜK GİDER: ₺${gunlukGider.toLocaleString('tr-TR')}\n` +
-                `💰 NET DURUM: ₺${(gunlukKazanc - gunlukGider).toLocaleString('tr-TR')}\n\n` +
                 `📦 TÜM PARÇALARIN TOPLAM DEĞERİ: ₺${stokDegeri.toLocaleString('tr-TR')}`
             );
         }
