@@ -9,7 +9,6 @@ app = Flask(__name__)
 CORS(app)
 
 # --- MONGODB BAĞLANTISI ---
-# Yeni şifrenle güncellendi: Dyta96252
 MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
 
 try:
@@ -21,55 +20,56 @@ except Exception as e:
     print(f"MongoDB Bağlantı Hatası: {e}")
     sys.exit(1)
 
-# --- PANEL TASARIMI (Gelişmiş Tablo Görünümü) ---
+# --- PANEL TASARIMI ---
 HTML_PANEL = r"""
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>StokTakip Pro | Yönetim Paneli</title>
+    <title>Özcan Oto Servis | Stok Takip</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-50 font-sans p-4 md:p-8">
     <div class="max-w-6xl mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-                <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">Toplam Çeşit</p>
-                <h2 id="stat-total-items" class="text-4xl font-black text-slate-800 mt-2">0</h2>
-            </div>
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-red-100">
-                <p class="text-red-400 text-[10px] font-black uppercase tracking-widest">Kritik Stok Sayısı</p>
-                <h2 id="stat-crit-count" class="text-4xl font-black text-red-500 mt-2">0</h2>
-            </div>
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100">
-                <p class="text-emerald-400 text-[10px] font-black uppercase tracking-widest">Toplam Değer</p>
-                <h2 id="stat-total-val" class="text-4xl font-black text-emerald-600 mt-2">₺0</h2>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <h1 class="text-3xl font-black text-slate-800 tracking-tighter uppercase italic">
+                <i class="fas fa-tools text-blue-600"></i> ÖZCAN OTO SERVİS
+            </h1>
+            <div class="flex gap-4 w-full md:w-auto">
+                <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex-1 text-center">
+                    <p class="text-[9px] font-black text-slate-400 uppercase">Kritik Stok</p>
+                    <h2 id="stat-crit-count" class="text-xl font-black text-red-500">0</h2>
+                </div>
+                <div class="bg-emerald-500 px-6 py-3 rounded-2xl shadow-lg flex-1 text-center text-white">
+                    <p class="text-[9px] font-black uppercase opacity-80">Toplam Değer</p>
+                    <h2 id="stat-total-val" class="text-xl font-black">₺0</h2>
+                </div>
             </div>
         </div>
 
         <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <input id="in-code" type="text" placeholder="Ürün Kodu" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border">
-                <input id="in-name" type="text" placeholder="Ürün İsmi" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border">
-                <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border">
-                <input id="in-price" type="number" placeholder="Birim Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border">
-                <button onclick="hizliEkle()" class="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg transition-all active:scale-95">KAYDET</button>
+                <input id="in-code" type="text" placeholder="Parça Kodu" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
+                <input id="in-name" type="text" placeholder="Parça İsmi" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
+                <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
+                <input id="in-price" type="number" placeholder="Birim Fiyat (₺)" class="p-4 bg-slate-50 rounded-xl outline-none font-bold border focus:ring-2 ring-blue-500">
+                <button onclick="hizliEkle()" class="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg transition-all active:scale-95">SİSTEME KAYDET</button>
             </div>
         </div>
 
         <div class="relative mb-6">
             <i class="fas fa-search absolute left-5 top-5 text-slate-400"></i>
-            <input id="search" oninput="yukle()" type="text" placeholder="İsim veya kodla ara..." class="w-full pl-14 pr-6 py-4 bg-white rounded-2xl shadow-sm outline-none font-bold border-2 border-transparent focus:border-blue-200">
+            <input id="search" oninput="yukle()" type="text" placeholder="Parça adı veya koduyla hızlı ara..." class="w-full pl-14 pr-6 py-4 bg-white rounded-2xl shadow-sm outline-none font-bold border-2 border-transparent focus:border-blue-200">
         </div>
 
         <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
             <table class="w-full text-left">
                 <thead class="bg-slate-50 border-b text-slate-400 text-[10px] font-black uppercase">
                     <tr>
-                        <th class="px-10 py-6">Ürün Detayı</th>
+                        <th class="px-10 py-6">Parça Bilgisi</th>
                         <th class="px-10 py-6">Kategori</th>
-                        <th class="px-10 py-6 text-center">Stok Kontrol</th>
+                        <th class="px-10 py-6 text-center">Mevcut Stok</th>
                         <th class="px-10 py-6 text-right">İşlem</th>
                     </tr>
                 </thead>
@@ -86,7 +86,7 @@ HTML_PANEL = r"""
                 const query = document.getElementById('search').value.toLowerCase();
                 const list = document.getElementById('list');
                 
-                let tStock = 0, tVal = 0, crit = 0, count = 0;
+                let tVal = 0, crit = 0;
                 
                 list.innerHTML = data.filter(i => 
                     (i.name || "").toLowerCase().includes(query) || 
@@ -94,23 +94,21 @@ HTML_PANEL = r"""
                 ).map(i => {
                     const stock = i.stock || 0;
                     const price = i.price || 0;
-                    const isCrit = stock <= 10;
+                    const isVeryLow = stock <= 2; // Stok 2 veya altındaysa
                     
-                    if(isCrit) crit++;
-                    tStock += stock;
+                    if(stock <= 10) crit++;
                     tVal += (stock * price);
-                    count++;
 
                     return `
-                    <tr class="${isCrit ? 'bg-red-50/50' : 'hover:bg-slate-50'} transition-all">
+                    <tr class="${isVeryLow ? 'bg-red-50' : 'hover:bg-slate-50'} transition-all">
                         <td class="px-10 py-6">
                             <div class="flex flex-col">
-                                <span class="text-[9px] font-black text-slate-400 uppercase">Fiyat: ₺${price.toLocaleString()} | Kritik: 10</span>
-                                <span class="text-[11px] font-black text-blue-600 uppercase tracking-tight">${i.code || 'KODSUZ'}</span>
-                                <span class="font-black text-slate-800 uppercase text-lg leading-tight">${i.name}</span>
+                                <span class="text-[11px] font-black text-slate-900 bg-yellow-400 w-fit px-2 rounded mb-1 uppercase tracking-tighter">Birim: ₺${price.toLocaleString()}</span>
+                                <span class="text-[11px] font-bold text-blue-600 uppercase tracking-tight">${i.code || 'KODSUZ'}</span>
+                                <span class="font-black uppercase text-lg leading-tight ${isVeryLow ? 'text-red-600 underline' : 'text-slate-800'}">${i.name}</span>
                             </div>
                         </td>
-                        <td class="px-10 py-6 font-bold text-slate-500 uppercase text-sm">${i.category || '-'}</td>
+                        <td class="px-10 py-6 font-bold text-slate-500 uppercase text-xs">${i.category || '-'}</td>
                         <td class="px-10 py-6 text-center">
                             <div class="flex items-center justify-center gap-4 bg-white border rounded-2xl p-1 w-fit mx-auto shadow-sm">
                                 <button onclick="stokGuncelle('${i._id}', -1)" class="w-10 h-10 text-red-500 font-bold hover:bg-red-50 rounded-xl">-</button>
@@ -124,7 +122,6 @@ HTML_PANEL = r"""
                     </tr>`;
                 }).join('');
 
-                document.getElementById('stat-total-items').innerText = count;
                 document.getElementById('stat-crit-count').innerText = crit;
                 document.getElementById('stat-total-val').innerText = '₺' + tVal.toLocaleString();
             } catch (e) { console.error("Veri hatası:", e); }
@@ -139,7 +136,7 @@ HTML_PANEL = r"""
                 stock: 0
             };
 
-            if(!payload.name) return alert("Lütfen ürün ismi girin!");
+            if(!payload.name) return alert("Parça ismini yazmalısınız!");
 
             const res = await fetch('/api/products', {
                 method: 'POST',
@@ -153,8 +150,6 @@ HTML_PANEL = r"""
                 document.getElementById('in-cat').value = '';
                 document.getElementById('in-price').value = '';
                 yukle();
-            } else {
-                alert("Veritabanı bağlantı hatası!");
             }
         }
 
@@ -168,7 +163,10 @@ HTML_PANEL = r"""
         }
 
         async function sil(id) {
-            if(confirm('Ürün silinsin mi?')) { await fetch('/api/products/'+id, {method: 'DELETE'}); yukle(); }
+            if(confirm('Parçayı silmek istediğinize emin misiniz?')) { 
+                await fetch('/api/products/'+id, {method: 'DELETE'}); 
+                yukle(); 
+            }
         }
         yukle();
     </script>
