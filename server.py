@@ -8,62 +8,40 @@ app = Flask(__name__)
 CORS(app)
 
 # --- MONGODB BAĞLANTISI ---
-# NOT: localhost linki Render'da çalışmaz, ama istediğin gibi yerleştirdim.
+# ÖNEMLİ: localhost internette ÇALIŞMAZ. MongoDB Atlas'tan aldığın linki buraya koymalısın!
 MONGO_URI = "mongodb://localhost:27017" 
-
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
 
-# --- GÖRSEL PANEL TASARIMI (index.html buraya gömüldü) ---
 HTML_PANEL = """
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>StokTakip Pro - Canlı Panel</title>
+    <title>StokTakip Pro - Hızlı Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-50 font-sans">
-    <nav class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm">
-        <h1 class="text-xl font-black text-blue-600 italic">StokTakip Pro</h1>
-        <div class="text-sm font-bold text-slate-500">Durum: <span class="text-green-500 font-black">● CANLI</span></div>
-    </nav>
-
-    <div class="max-w-6xl mx-auto p-6 md:p-10">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 text-center">
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
-                <p class="text-slate-400 text-[10px] font-black uppercase">Toplam Çeşit</p>
-                <h2 id="total-count" class="text-5xl font-black text-slate-800 mt-2">0</h2>
+<body class="bg-slate-50 font-sans p-4 md:p-10">
+    <div class="max-w-5xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div class="relative w-full md:w-96">
+                <i class="fas fa-search absolute left-4 top-4 text-slate-400"></i>
+                <input id="search" oninput="yukle()" type="text" placeholder="Parça ara..." class="w-full pl-12 pr-4 py-3 bg-white rounded-2xl shadow-sm outline-none border border-transparent focus:border-blue-500 font-bold">
             </div>
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-red-100">
-                <p class="text-red-400 text-[10px] font-black uppercase">Kritik Stok</p>
-                <h2 id="crit-count" class="text-5xl font-black text-red-500 mt-2">0</h2>
-            </div>
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
-                <p class="text-slate-400 text-[10px] font-black uppercase">Depo Değeri</p>
-                <h2 id="total-val" class="text-5xl font-black text-emerald-500 mt-2">₺0</h2>
-            </div>
-        </div>
-
-        <div class="bg-white p-10 rounded-[2.5rem] shadow-xl border border-slate-50 mb-12">
-            <h3 class="text-xl font-black mb-8 text-slate-800 italic">Yeni Parça Kaydı</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <input id="n" type="text" placeholder="Parça Adı" class="p-5 bg-slate-50 rounded-2xl outline-none font-bold">
-                <input id="c" type="text" placeholder="Kategori" class="p-5 bg-slate-50 rounded-2xl outline-none font-bold">
-                <input id="s" type="number" placeholder="Stok" class="p-5 bg-slate-50 rounded-2xl outline-none font-bold">
-                <input id="p" type="number" placeholder="Fiyat" class="p-5 bg-slate-50 rounded-2xl outline-none font-bold">
-                <input id="l" type="number" placeholder="Limit" class="p-5 bg-slate-50 rounded-2xl outline-none font-bold">
-            </div>
-            <button onclick="kaydet()" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black text-lg shadow-lg transition-all active:scale-95">
-                VERİTABANINA GÖNDER
+            <button onclick="hizliEkle()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-black shadow-lg shadow-blue-100 transition-all active:scale-95">
+                <i class="fas fa-plus mr-2"></i> YENİ PARÇA EKLE
             </button>
         </div>
 
-        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
             <table class="w-full text-left">
-                <thead class="bg-slate-50 text-slate-400 text-[10px] font-black uppercase">
-                    <tr><th class="px-10 py-6">Detay</th><th class="px-10 py-6">Kategori</th><th class="px-10 py-6">Stok</th><th class="px-10 py-6 text-right">İşlem</th></tr>
+                <thead class="bg-slate-50 border-b text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                    <tr>
+                        <th class="px-8 py-5">Eşya Adı</th>
+                        <th class="px-8 py-5 text-center">Stok Yönetimi</th>
+                        <th class="px-8 py-5 text-right">İşlem</th>
+                    </tr>
                 </thead>
                 <tbody id="list" class="divide-y divide-slate-50"></tbody>
             </table>
@@ -72,37 +50,44 @@ HTML_PANEL = """
 
     <script>
         async function yukle() {
-            try {
-                const res = await fetch('/api/products');
-                const data = await res.json();
-                const list = document.getElementById('list');
-                let val = 0; let crit = 0;
-                document.getElementById('total-count').innerText = data.length;
-                list.innerHTML = data.map(i => {
-                    const isCrit = i.stock <= (i.critical_limit || 10);
-                    if(isCrit) crit++;
-                    val += (i.stock * (i.price || 0));
-                    return `<tr class="${isCrit ? 'bg-red-50' : ''}">
-                        <td class="px-10 py-6 font-bold text-slate-700">${i.name}</td>
-                        <td class="px-10 py-6 text-xs font-black text-blue-500 uppercase">${i.category}</td>
-                        <td class="px-10 py-6 font-black">${i.stock} ${isCrit ? '⚠️' : ''}</td>
-                        <td class="px-10 py-6 text-right"><button onclick="sil('${i._id}')" class="text-red-300 hover:text-red-600 px-4"><i class="fas fa-trash"></i></button></td>
-                    </tr>`;
-                }).join('');
-                document.getElementById('crit-count').innerText = crit;
-                document.getElementById('total-val').innerText = '₺' + val.toLocaleString();
-            } catch(e) { console.error("Veri yuklenemedi"); }
+            const res = await fetch('/api/products');
+            let data = await res.json();
+            const query = document.getElementById('search').value.toLowerCase();
+            const list = document.getElementById('list');
+            
+            list.innerHTML = data.filter(i => i.name.toLowerCase().includes(query)).map(i => `
+                <tr class="hover:bg-slate-50 transition-all">
+                    <td class="px-8 py-6 font-black text-slate-700 uppercase">\${i.name}</td>
+                    <td class="px-8 py-6">
+                        <div class="flex items-center justify-center gap-4 bg-slate-100 w-fit mx-auto rounded-xl p-1">
+                            <button onclick="stokGuncelle('\${i._id}', -1)" class="w-10 h-10 bg-white rounded-lg shadow-sm hover:bg-red-50 text-red-500 font-bold">-</button>
+                            <span class="w-12 text-center font-black text-lg">\${i.stock}</span>
+                            <button onclick="stokGuncelle('\${i._id}', 1)" class="w-10 h-10 bg-white rounded-lg shadow-sm hover:bg-green-50 text-green-500 font-bold">+</button>
+                        </div>
+                    </td>
+                    <td class="px-8 py-6 text-right">
+                        <button onclick="sil('\${i._id}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt text-xl"></i></button>
+                    </td>
+                </tr>`).join('');
         }
 
-        async function kaydet() {
-            const d = {
-                name: document.getElementById('n').value,
-                category: document.getElementById('c').value,
-                stock: parseInt(document.getElementById('s').value || 0),
-                price: parseFloat(document.getElementById('p').value || 0),
-                critical_limit: parseInt(document.getElementById('l').value || 10)
-            };
-            await fetch('/api/products', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d) });
+        async function hizliEkle() {
+            const ad = prompt("Eklenecek parçanın adını yaz:");
+            if(!ad) return;
+            await fetch('/api/products', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: ad, stock: 0})
+            });
+            yukle();
+        }
+
+        async function stokGuncelle(id, miktar) {
+            await fetch(\`/api/products/\${id}/stock\`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({change: miktar})
+            });
             yukle();
         }
 
@@ -129,11 +114,16 @@ def add_p():
     db.products.insert_one(request.json)
     return jsonify({"ok": True})
 
+@app.route('/api/products/<id>/stock', methods=['PUT'])
+def update_stock(id):
+    change = request.json.get('change', 0)
+    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": change}})
+    return jsonify({"ok": True})
+
 @app.route('/api/products/<id>', methods=['DELETE'])
 def del_p(id):
     db.products.delete_one({"_id": ObjectId(id)})
     return jsonify({"ok": True})
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
