@@ -13,7 +13,7 @@ MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongod
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
 
-# --- PANEL TASARIMI (TURUNCU & ULTRA DETAYLI) ---
+# --- PANEL TASARIMI (GÜNLÜK RAPOR & EXCEL EKLENDİ) ---
 HTML_PANEL = r"""
 <!DOCTYPE html>
 <html lang="tr">
@@ -22,6 +22,7 @@ HTML_PANEL = r"""
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ÖZCAN OTO PRO | Kurumsal Kaynak Planlama</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
@@ -122,13 +123,25 @@ HTML_PANEL = r"""
                     </div>
                 </div>
 
-                <div class="bg-white p-10 rounded-[3rem] shadow-sm border">
+                <div class="bg-white p-10 rounded-[3rem] shadow-sm border mb-8">
                     <h4 class="text-lg font-black mb-6 uppercase tracking-tighter">Hızlı İşlem Menüsü</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <button onclick="showPage('stok')" class="p-6 bg-orange-50 text-orange-600 rounded-3xl font-black hover:bg-orange-500 hover:text-white transition-all"><i class="fas fa-plus block mb-2 text-xl"></i> Stok Ekle</button>
                         <button onclick="showPage('gider')" class="p-6 bg-red-50 text-red-600 rounded-3xl font-black hover:bg-red-500 hover:text-white transition-all"><i class="fas fa-minus block mb-2 text-xl"></i> Gider Gir</button>
                         <button onclick="showPage('cari')" class="p-6 bg-blue-50 text-blue-600 rounded-3xl font-black hover:bg-blue-500 hover:text-white transition-all"><i class="fas fa-user-plus block mb-2 text-xl"></i> Yeni Cari</button>
                         <button onclick="openFinanceModal()" class="p-6 bg-emerald-50 text-emerald-600 rounded-3xl font-black hover:bg-emerald-500 hover:text-white transition-all"><i class="fas fa-calculator block mb-2 text-xl"></i> Hesaplama</button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-10 rounded-[3rem] shadow-xl text-white">
+                    <h4 class="text-lg font-black mb-6 uppercase tracking-tighter text-orange-500">Gün Sonu Raporlama</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <button onclick="exportStokExcel()" class="p-6 bg-white/5 border border-white/10 rounded-3xl font-black hover:bg-emerald-600 transition-all flex items-center justify-center gap-4">
+                            <i class="fas fa-file-excel text-2xl"></i> STOK LİSTESİNİ EXCEL AL
+                        </button>
+                        <button onclick="sendGmailReport()" class="p-6 bg-white/5 border border-white/10 rounded-3xl font-black hover:bg-orange-600 transition-all flex items-center justify-center gap-4">
+                            <i class="fas fa-envelope text-2xl"></i> GMAIL İLE RAPOR GÖNDER
+                        </button>
                     </div>
                 </div>
             </div>
@@ -154,7 +167,7 @@ HTML_PANEL = r"""
                 </div>
 
                 <div class="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
-                    <table class="w-full text-left">
+                    <table class="w-full text-left" id="stok-tablo-gizli">
                         <thead class="bg-slate-50 border-b text-slate-400 text-[10px] font-black uppercase tracking-widest">
                             <tr>
                                 <th class="px-8 py-7">Parça Detayı</th>
@@ -294,10 +307,17 @@ HTML_PANEL = r"""
             const g = await gRes.json();
             const c = await cRes.json();
             
+            products = p; // Global listeyi güncelle
+            expenses = g;
+
             let crit = p.filter(x => x.stock <= 2).length;
             document.getElementById('dash-count').innerText = p.length;
             document.getElementById('dash-crit').innerText = crit;
             document.getElementById('dash-cari').innerText = c.length;
+
+            // Değerleri hesapla
+            totalVal = 0; p.forEach(i => totalVal += (i.stock * i.price));
+            totalGid = 0; g.forEach(i => totalGid += i.tutar);
         }
 
         async function hizliEkle() {
@@ -319,7 +339,6 @@ HTML_PANEL = r"""
 
             await fetch('/api/products', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(p) });
             
-            // Alanları Temizle
             document.getElementById('in-name').value = ''; 
             document.getElementById('in-code').value = ''; 
             document.getElementById('in-price').value = '';
@@ -363,9 +382,10 @@ HTML_PANEL = r"""
 
         async function yukleGider() {
             const res = await fetch('/api/expenses');
-            expenses = await res.json();
+            const data = await res.json();
+            expenses = data;
             totalGid = 0;
-            document.getElementById('gider-list').innerHTML = expenses.map(i => {
+            document.getElementById('gider-list').innerHTML = data.map(i => {
                 totalGid += i.tutar;
                 return `
                 <div class="bg-white p-8 rounded-[2.5rem] border-l-[12px] border-red-500 shadow-sm flex justify-between items-center transition-all hover:scale-[1.01]">
@@ -395,6 +415,35 @@ HTML_PANEL = r"""
             }
         }
 
+        function exportStokExcel() {
+            if(products.length === 0) return alert("Daha hiç ürün eklememişsin usta!");
+            const data = products.map(i => ({
+                "PARÇA ADI": i.name,
+                "PARÇA KODU": i.code,
+                "KATEGORİ": i.category || "GENEL",
+                "STOK ADETİ": i.stock,
+                "BİRİM FİYAT": "₺" + i.price.toLocaleString(),
+                "TOPLAM DEĞER": "₺" + (i.stock * i.price).toLocaleString()
+            }));
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Stok Listesi");
+            XLSX.writeFile(wb, "OzcanOto_Gunluk_Stok_" + new Date().toLocaleDateString('tr-TR') + ".xlsx");
+        }
+
+        function sendGmailReport() {
+            if(products.length === 0) return alert("Raporlayacak ürün yok usta!");
+            let body = "ÖZCAN OTO GÜNLÜK STOK RAPORU (" + new Date().toLocaleDateString('tr-TR') + ")\n";
+            body += "--------------------------------------------------\n\n";
+            products.forEach(p => {
+                body += `PARÇA: ${p.name}\nKOD: ${p.code}\nKATEGORİ: ${p.category || 'GENEL'}\nSTOK: ${p.stock}\nFİYAT: ₺${p.price.toLocaleString()}\n--------------------------\n`;
+            });
+            body += `\nTOPLAM DEPO DEĞERİ: ₺${totalVal.toLocaleString()}`;
+            
+            const mailUrl = `mailto:adanaozcanotoyedekparca@gmail.com?subject=Ozcan Oto Gunluk Stok Raporu&body=${encodeURIComponent(body)}`;
+            window.location.href = mailUrl;
+        }
+
         function openFinanceModal() {
             document.getElementById('finance-modal').classList.remove('hidden');
             document.getElementById('fin-stok').innerText = '₺' + totalVal.toLocaleString();
@@ -410,6 +459,7 @@ HTML_PANEL = r"""
                 document.getElementById('main-section').classList.remove('hidden');
                 showPage('dashboard');
                 yukleStok();
+                yukleDashboard();
             }
         };
     </script>
