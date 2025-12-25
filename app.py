@@ -31,6 +31,13 @@ def handle_generic_api(col):
     db[col].insert_one(data)
     return jsonify({"ok": True})
 
+# YENİ: KAZANÇ VE GİDERLERİ SIFIRLAMA ROTASI
+@app.route('/api/reset-finance', methods=['POST'])
+def reset_finance():
+    db.invoices.delete_many({}) # Tüm faturaları siler
+    db.expenses.delete_many({}) # Tüm giderleri siler
+    return jsonify({"ok": True})
+
 @app.route('/api/products/update/<id>', methods=['POST'])
 def update_stock(id):
     miktar = request.json.get('miktar', 0)
