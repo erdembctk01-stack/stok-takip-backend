@@ -33,8 +33,8 @@ def handle_generic_api(col):
 
 @app.route('/api/reset-finance', methods=['POST'])
 def reset_finance():
-    db.invoices.delete_many({})
-    db.expenses.delete_many({})
+    db.invoices.delete_many({}) 
+    db.expenses.delete_many({}) 
     return jsonify({"ok": True})
 
 @app.route('/api/products/update/<id>', methods=['POST'])
