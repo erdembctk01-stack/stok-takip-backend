@@ -31,6 +31,15 @@ def handle_generic_api(col):
     db[col].insert_one(data)
     return jsonify({"ok": True})
 
+# YENİ: Toplu Veri Yükleme Uç Noktası
+@app.route('/api/import/<col>', methods=['POST'])
+def import_data(col):
+    data_list = request.json
+    if isinstance(data_list, list) and len(data_list) > 0:
+        db[col].insert_many(data_list)
+        return jsonify({"ok": True, "count": len(data_list)})
+    return jsonify({"ok": False, "message": "Geçersiz veri formatı"})
+
 @app.route('/api/reset-finance', methods=['POST'])
 def reset_finance():
     db.invoices.delete_many({}) 
@@ -59,16 +68,13 @@ def get_stats():
     
     def temizle(val):
         if val is None or val == "": return 0.0
-        # Eğer zaten sayıysa direkt döndür
         if isinstance(val, (int, float)): return float(val)
         try:
-            # Sadece kuruş ayracı olan virgülü noktaya çevir, sembolleri sil
             s = str(val).replace('₺', '').replace(' ', '').replace(',', '.')
             return float(s)
         except:
             return 0.0
 
-    # Hesaplamalar
     toplam_kazanc = sum(temizle(i.get('toplam', 0)) for i in invoices)
     toplam_gider = sum(temizle(e.get('tutar', 0)) for e in expenses)
     depo_degeri = sum(int(p.get('stock', 0)) * temizle(p.get('price', 0)) for p in products)
