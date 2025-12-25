@@ -1,31 +1,16 @@
-from flask import Blueprint, request, jsonify
 from bson.objectid import ObjectId
 
-stok_bp = Blueprint('stok_bp', __name__)
-db = None
+def stok_guncelle(db, id, miktar):
+    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": miktar}})
+    return {"ok": True}
 
-def init_db(database_instance):
-    global db
-    db = database_instance
-
-@stok_bp.route('/api/products', methods=['GET', 'POST'])
-def manage_products():
-    if request.method == 'POST':
-        data = request.json
-        db.products.insert_one({
-            "name": data['name'],
-            "code": data['code'],
-            "price": data['price'],
-            "stock": int(data['stock'])
-        })
-        return jsonify({"status": "success"})
-    
-    products = list(db.products.find())
-    for p in products:
-        p['_id'] = str(p['_id'])
-    return jsonify(products)
-
-@stok_bp.route('/api/products/<id>', methods=['DELETE'])
-def delete_product(id):
-    db.products.delete_one({"_id": ObjectId(id)})
-    return jsonify({"status": "success"})
+def parca_ekle(db, data):
+    adet = int(data.get('stock')) if data.get('stock') and str(data.get('stock')).strip() != "" else 1
+    db.products.insert_one({
+        "name": data['name'],
+        "code": data.get('code', '-'),
+        "category": data.get('category', 'Genel'),
+        "stock": adet,
+        "price": data.get('price', "0")
+    })
+    return {"ok": True}
