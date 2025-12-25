@@ -9,7 +9,6 @@ import satis_yonetimi
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
-# MongoDB Bağlantısı
 MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
@@ -59,17 +58,17 @@ def get_stats():
     products = list(db.products.find())
     
     def temizle(val):
-        if val is None: return 0.0
+        if val is None or val == "": return 0.0
+        # Eğer zaten sayıysa direkt döndür
+        if isinstance(val, (int, float)): return float(val)
         try:
-            # Hem string hem sayı formatını destekler
-            s_val = str(val).replace('₺', '').replace(' ', '').replace('.', '')
-            if ',' in s_val:
-                s_val = s_val.replace(',', '.')
-            return float(s_val)
+            # Sadece kuruş ayracı olan virgülü noktaya çevir, sembolleri sil
+            s = str(val).replace('₺', '').replace(' ', '').replace(',', '.')
+            return float(s)
         except:
             return 0.0
 
-    # Giderler kısmından 'tutar' alanını çekerek toplar
+    # Hesaplamalar
     toplam_kazanc = sum(temizle(i.get('toplam', 0)) for i in invoices)
     toplam_gider = sum(temizle(e.get('tutar', 0)) for e in expenses)
     depo_degeri = sum(int(p.get('stock', 0)) * temizle(p.get('price', 0)) for p in products)
