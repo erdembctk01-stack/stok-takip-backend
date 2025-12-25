@@ -18,13 +18,18 @@
         .btn-action { padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
         .btn-action:hover { opacity: 0.8; }
         #main-layout { display: none; width: 100%; }
+        /* Yanıp sönen ışık efekti */
+        .status-dot { height: 8px; width: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #22c55e; }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
         <div class="bg-white p-10 rounded-3xl shadow-2xl w-96 text-center">
-            <h1 class="text-3xl font-black italic mb-8 text-slate-900">ÖZCAN OTO</h1>
+            <h1 class="text-3xl font-black italic mb-2 text-slate-900">ÖZCAN OTO</h1>
+            <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-8 flex items-center justify-center">
+                <span class="status-dot"></span> Sistem Aktif
+            </p>
             <div id="login-form" class="space-y-4">
                 <input id="user-in" type="text" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500">
                 <input id="pass-in" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500">
@@ -36,7 +41,10 @@
     <div id="main-layout">
         <aside class="sidebar">
             <div class="p-8 border-b border-slate-800 text-center">
-                <h1 class="text-2xl font-black italic text-white">ÖZCAN OTO</h1>
+                <h1 class="text-2xl font-black italic text-white leading-tight">ÖZCAN OTO</h1>
+                <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-[0.2em] mt-1 flex items-center justify-center">
+                    <span class="status-dot" style="width:6px; height:6px;"></span> Sistem Aktif
+                </p>
             </div>
             <nav class="mt-6 flex-1">
                 <div onclick="showPage('dashboard')" id="btn-dashboard" class="sidebar-link sidebar-active"><i class="fas fa-home mr-3"></i> Dashboard</div>
@@ -193,7 +201,7 @@
             document.getElementById('dash-deger').innerText = s.depo;
         }
 
-        // --- VERİ YÜKLEME (IMPORT) ---
+        // --- VERİ YÜKLEME ---
         let currentImportCol = '';
         function openImportModal(col) {
             currentImportCol = col;
@@ -225,20 +233,20 @@
             });
         }
 
-        // --- GMAIL RAPORLAMA ---
+        // --- MAIL RAPORLAMA ---
         async function sendGmail(api) {
             const res = await fetch(`${API_URL}/${api}`);
             const data = await res.json();
             let body = "ÖZCAN OTO RAPORU\n\n";
             data.forEach(i => {
                 if(api === 'products') body += `${i.name} - Stok: ${i.stock} - Maliyet: ${i.price} TL\n`;
-                if(api === 'invoices') body += `${i.tarih}: ${i.ad} - ${i.parca_ad} (${i.toplam} TL)\n`;
+                if(api === 'invoices') body += `${f.tarih}: ${i.ad} - ${i.parca_ad} (${i.toplam} TL)\n`;
                 if(api === 'customers') body += `${i.ad} - Tel: ${i.tel}\n`;
             });
             window.location.href = `mailto:?subject=OzcanOto_${api}_Raporu&body=${encodeURIComponent(body)}`;
         }
 
-        // --- STOK İŞLEMLERİ ---
+        // --- STOK ---
         async function parcaEkle() {
             const data = {
                 name: document.getElementById('new-name').value,
