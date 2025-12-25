@@ -163,8 +163,8 @@ HTML_PANEL = r"""
                 <div class="flex justify-between items-center mb-8">
                     <h3 class="text-2xl font-bold text-slate-800 uppercase">Satış Geçmişi & Kayıtlar</h3>
                     <div class="flex gap-2">
-                         <button onclick="exportToExcel('invoices')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-file-excel mr-2"></i>Excel</button>
-                         <button onclick="sendGmailReport('invoices')" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-envelope mr-2"></i>Gmail</button>
+                         <button onclick="exportToExcel('invoices')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-file-excel mr-2"></i>Excel İndir</button>
+                         <button onclick="sendGmailReport('invoices')" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-envelope mr-2"></i>Gmail Paylaş</button>
                     </div>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden text-sm">
@@ -236,18 +236,19 @@ HTML_PANEL = r"""
             const ws = XLSX.utils.json_to_sheet(mappedData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Rapor");
-            
-            // Japonca/Karakter sorununu çözen UTF-8 ayarı
-            XLSX.writeFile(wb, `OzcanOto_${type}_${new Date().toLocaleDateString()}.xlsx`);
+            XLSX.writeFile(wb, `OzcanOto_${type}_${new Date().toLocaleDateString('tr-TR')}.xlsx`);
         }
 
         async function sendGmailReport(type) {
             const res = await fetch(`/api/${type}`);
             const data = await res.json();
-            let body = `ÖZCAN OTO GÜNLÜK RAPOR - ${new Date().toLocaleDateString()}\n\n`;
+            const bugun = new Date().toLocaleDateString('tr-TR');
+            let body = `ÖZCAN OTO GÜNLÜK RAPOR - ${bugun}\n\n`;
             
             if(type === 'products') {
                 data.forEach(i => body += `PARÇA: ${i.name}\nKOD: ${i.code}\nSTOK: ${i.stock} ADET\nFİYAT: ₺${i.price}\n------------------\n`);
+                let total = 0; data.forEach(p => total += (Number(p.stock) * Number(p.price)));
+                body += `\nTOPLAM DEPO DEĞERİ: ₺${total.toLocaleString('tr-TR')}`;
             } else {
                 data.forEach(i => body += `MÜŞTERİ: ${i.ad}\nPARÇA: ${i.parca_ad}\nADET: ${i.adet}\nTARİH: ${i.tarih}\n------------------\n`);
             }
@@ -409,7 +410,7 @@ def handle_delete(col, id):
 def update_stock(id):
     degisim = request.json.get('degisim', 0)
     target = db.products.find_one({"_id": ObjectId(id)})
-    current_stock = int(target.get('stock', 0)) # Hata önleme: zorunlu int
+    current_stock = int(target.get('stock', 0))
     db.products.update_one({"_id": ObjectId(id)}, {"$set": {"stock": current_stock + int(degisim)}})
     return jsonify({"ok": True})
 
@@ -423,7 +424,7 @@ def fatura_kes():
         
         if not parca: return jsonify({"ok": False, "error": "Parca bulunamadı"}), 404
         
-        # Stok Güncelleme (Zorunlu sayı dönüşümü ile hata giderildi)
+        # HATA DÜZELTME: Mevcut stoğu zorla sayıya çeviriyoruz ($inc hatası almamak için)
         current_stock = int(parca.get('stock', 0))
         db.products.update_one({"_id": ObjectId(parca_id)}, {"$set": {"stock": current_stock - adet}})
         
@@ -437,7 +438,7 @@ def fatura_kes():
             "tarih": data['tarih']
         })
         
-        # CARİ OTOMASYON: Müşteriyi Cari Rehbere Ekle (Eğer yoksa)
+        # CARİ OTOMASYON: Müşteriyi Cari Rehbere Ekle (Zaten varsa telefon güncellenir)
         db.customers.update_one(
             {"ad": data['ad']},
             {"$set": {"ad": data['ad'], "tel": data['tel'], "tarih": datetime.now().strftime("%d.%m.%Y")}},
