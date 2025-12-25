@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>ÖZCAN OTO STOK | TAKİP MERKEZİ</title>
+    <title>ÖZCAN OTO PRO | YEDEKLEME MERKEZİ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -74,6 +74,7 @@
                     <h2 class="text-3xl font-black italic uppercase">Satış Yap</h2>
                     <div class="flex gap-2">
                         <button onclick="exportExcel('invoices')" class="bg-green-600 text-white btn-action">Excel</button>
+                        <button onclick="sendGmail('invoices')" class="bg-orange-600 text-white btn-action">Mail</button>
                         <button onclick="openImportModal('invoices')" class="bg-blue-600 text-white btn-action">Veri Yükle</button>
                     </div>
                 </div>
@@ -102,6 +103,7 @@
                     <h2 class="text-3xl font-black italic uppercase">Parça Yönetimi</h2>
                     <div class="flex gap-2">
                         <button onclick="exportExcel('products')" class="bg-green-600 text-white btn-action">Excel</button>
+                        <button onclick="sendGmail('products')" class="bg-orange-600 text-white btn-action">Mail</button>
                         <button onclick="openImportModal('products')" class="bg-blue-600 text-white btn-action">Veri Yükle</button>
                     </div>
                 </div>
@@ -126,7 +128,10 @@
             <div id="page-cari" class="page-content">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-3xl font-black italic uppercase">Cari Rehber</h2>
-                    <button onclick="openImportModal('customers')" class="bg-blue-600 text-white btn-action">Veri Yükle</button>
+                    <div class="flex gap-2">
+                        <button onclick="exportExcel('customers')" class="bg-green-600 text-white btn-action">Excel</button>
+                        <button onclick="openImportModal('customers')" class="bg-blue-600 text-white btn-action">Veri Yükle</button>
+                    </div>
                 </div>
                 <div id="cari-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </div>
@@ -188,7 +193,7 @@
             document.getElementById('dash-deger').innerText = s.depo;
         }
 
-        // --- VERİ YÜKLEME (IMPORT) MANTIĞI ---
+        // --- VERİ YÜKLEME (IMPORT) ---
         let currentImportCol = '';
         function openImportModal(col) {
             currentImportCol = col;
@@ -218,6 +223,19 @@
                     } else { alert("Yükleme hatası!"); }
                 }
             });
+        }
+
+        // --- GMAIL RAPORLAMA ---
+        async function sendGmail(api) {
+            const res = await fetch(`${API_URL}/${api}`);
+            const data = await res.json();
+            let body = "ÖZCAN OTO RAPORU\n\n";
+            data.forEach(i => {
+                if(api === 'products') body += `${i.name} - Stok: ${i.stock} - Maliyet: ${i.price} TL\n`;
+                if(api === 'invoices') body += `${i.tarih}: ${i.ad} - ${i.parca_ad} (${i.toplam} TL)\n`;
+                if(api === 'customers') body += `${i.ad} - Tel: ${i.tel}\n`;
+            });
+            window.location.href = `mailto:?subject=OzcanOto_${api}_Raporu&body=${encodeURIComponent(body)}`;
         }
 
         // --- STOK İŞLEMLERİ ---
@@ -258,7 +276,7 @@
             yukleStok();
         }
 
-        // --- SATIŞ / FATURA ---
+        // --- SATIŞ ---
         async function faturaKes() {
             const data = {
                 ad: document.getElementById('fat-ad').value,
@@ -285,7 +303,7 @@
                 </tr>`).join('');
         }
 
-        // --- GİDER EKLE ---
+        // --- GİDER ---
         async function giderEkle() {
             const data = {
                 aciklama: document.getElementById('exp-name').value,
@@ -305,6 +323,7 @@
                 </div>`).join('');
         }
 
+        // --- CARİ ---
         async function yukleCari() {
             const res = await fetch(`${API_URL}/customers`);
             const data = await res.json();
