@@ -2,153 +2,163 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>ÖZCAN OTO PRO | Yönetim</title>
+    <title>ÖZCAN OTO | PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
-        .sidebar { background: #0f172a; width: 280px; min-height: 100vh; color: white; }
-        .page-content { display: none; padding: 40px; width: 100%; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; }
+        .sidebar { background: #0f172a; width: 300px; min-height: 100vh; color: white; flex-shrink: 0; }
+        .page-content { display: none; padding: 40px; width: 100%; height: 100vh; overflow-y: auto; }
         .active-section { display: block; }
-        .sidebar-link { padding: 15px 25px; cursor: pointer; color: #94a3b8; transition: 0.2s; display: block; border-radius: 12px; margin: 5px 15px; }
+        .sidebar-link { padding: 15px 25px; cursor: pointer; color: #94a3b8; transition: 0.2s; border-radius: 12px; margin: 5px 15px; display: block; }
         .sidebar-link:hover { background: #1e293b; color: white; }
         .sidebar-active { background: #f97316 !important; color: white !important; font-weight: bold; }
-        .critical-stock { background: #fef2f2; color: #dc2626; }
+        .critical { background: #fee2e2 !important; color: #dc2626 !important; }
     </style>
 </head>
-<body class="flex">
+<body>
+    <aside class="sidebar">
+        <div class="p-8 border-b border-slate-800 text-center">
+            <h1 class="text-2xl font-black uppercase italic tracking-tighter">ÖZCAN OTO</h1>
+            <p class="text-[10px] text-orange-500 font-bold uppercase tracking-[0.3em]">Servis & Yedek Parça</p>
+        </div>
+        <nav class="mt-6">
+            <div onclick="showPage('dashboard')" id="btn-dashboard" class="sidebar-link sidebar-active"><i class="fas fa-th-large mr-3"></i> DASHBOARD</div>
+            <div onclick="showPage('stok')" id="btn-stok" class="sidebar-link"><i class="fas fa-boxes mr-3"></i> PARÇA YÖNETİMİ</div>
+            <div onclick="showPage('fatura')" id="btn-fatura" class="sidebar-link"><i class="fas fa-file-invoice mr-3"></i> FATURA KES</div>
+            <div onclick="showPage('cari')" id="btn-cari" class="sidebar-link"><i class="fas fa-users mr-3"></i> CARİ REHBER</div>
+        </nav>
+    </aside>
 
-    <div id="login-section" class="fixed inset-0 z-[500] flex items-center justify-center bg-[#0f172a]">
-        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md text-center border-t-8 border-orange-500">
-            <h1 class="text-2xl font-black text-slate-800 uppercase italic">ÖZCAN OTO PRO</h1>
-            <div class="space-y-4 mt-8">
-                <input id="log-user" type="text" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-50 rounded-xl outline-none focus:ring-2 ring-orange-500">
-                <input id="log-pass" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-50 rounded-xl outline-none focus:ring-2 ring-orange-500">
-                <button onclick="handleLogin()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-black transition-all uppercase">Giriş Yap</button>
+    <main class="flex-1">
+        <div id="page-dashboard" class="page-content active-section">
+            <h2 class="text-3xl font-black mb-10 uppercase italic">Sistem Özeti</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-emerald-500">
+                    <p class="text-xs font-bold text-slate-400 uppercase mb-2">Toplam Kazanç</p>
+                    <h3 id="dash-kazanc" class="text-3xl font-black text-emerald-600">₺0</h3>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-blue-600">
+                    <p class="text-xs font-bold text-slate-400 uppercase mb-2">Stok Değeri</p>
+                    <h3 id="dash-deger" class="text-3xl font-black text-slate-800">****</h3>
+                    <button onclick="hesaplaDepo()" class="mt-4 text-[10px] bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold uppercase">Hesapla</button>
+                </div>
+                <div onclick="exportExcel('invoices')" class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-orange-500 cursor-pointer hover:bg-orange-50 transition-all">
+                    <p class="text-xs font-bold text-slate-400 uppercase mb-2">Raporlama</p>
+                    <h3 class="text-xl font-bold">Logları Excel İndir</h3>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="main-section" class="hidden flex w-full">
-        <aside class="sidebar">
-            <div class="p-8 border-b border-slate-800 font-black text-xl italic uppercase text-center">Özcan Oto</div>
-            <nav class="mt-6">
-                <div onclick="showPage('dashboard')" id="btn-dashboard" class="sidebar-link sidebar-active"><i class="fas fa-chart-line mr-3"></i> Dashboard</div>
-                <div onclick="showPage('stok')" id="btn-stok" class="sidebar-link"><i class="fas fa-boxes mr-3"></i> Parça Yönetimi</div>
-                <div onclick="showPage('fatura')" id="btn-fatura" class="sidebar-link"><i class="fas fa-file-invoice mr-3"></i> Satış Yap</div>
-                <div onclick="showPage('log')" id="btn-log" class="sidebar-link"><i class="fas fa-history mr-3"></i> Satış Geçmişi</div>
-            </nav>
-            <div class="absolute bottom-10 w-full px-6">
-                <button onclick="handleLogout()" class="text-slate-500 text-xs font-bold uppercase hover:text-red-500"><i class="fas fa-power-off mr-2"></i> Güvenli Çıkış</button>
-            </div>
-        </aside>
-
-        <main class="flex-1 h-screen overflow-y-auto">
-            <div id="page-dashboard" class="page-content active-section">
-                <h2 class="text-3xl font-black text-slate-800 mb-8 uppercase italic">Sistem Paneli</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                    <div class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-emerald-500">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Günlük Kazanç</p>
-                        <h4 id="dash-kazanc" class="text-3xl font-black text-emerald-600">₺0</h4>
-                    </div>
-                    <div onclick="exportToExcel('products')" class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-green-600 cursor-pointer hover:bg-green-50">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Envanter</p>
-                        <h4 class="text-xl font-bold">Stok Excel İndir</h4>
-                    </div>
-                    <div onclick="sendGmailReport('products')" class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-orange-500 cursor-pointer hover:bg-orange-50">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paylaşım</p>
-                        <h4 class="text-xl font-bold">Gmail İle Gönder</h4>
-                    </div>
+        <div id="page-stok" class="page-content">
+            <div class="bg-white p-8 rounded-3xl shadow-lg mb-8 border border-slate-100">
+                <h3 class="font-bold mb-4 uppercase">Yeni Parça Ekle</h3>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <input id="new-name" type="text" placeholder="Parça Adı" class="p-3 bg-slate-50 rounded-xl border-none text-sm outline-none focus:ring-2 ring-orange-500">
+                    <input id="new-code" type="text" placeholder="Kod" class="p-3 bg-slate-50 rounded-xl border-none text-sm outline-none">
+                    <input id="new-cat" type="text" placeholder="Kategori" class="p-3 bg-slate-50 rounded-xl border-none text-sm outline-none">
+                    <input id="new-stock" type="number" placeholder="Adet (Opsiyonel)" class="p-3 bg-slate-50 rounded-xl border-none text-sm outline-none">
+                    <button onclick="parcaEkle()" class="bg-slate-900 text-white rounded-xl font-bold text-xs uppercase">Kaydet</button>
                 </div>
             </div>
 
-            <div id="page-stok" class="page-content">
-                <div class="flex justify-between items-center mb-8">
-                    <h3 class="text-2xl font-bold uppercase">Stok Listesi</h3>
-                    <input id="search" oninput="yukleStok()" type="text" placeholder="Parça ara..." class="p-3 border rounded-xl w-80 outline-none focus:ring-2 ring-orange-500">
-                </div>
-                <div class="bg-white rounded-3xl shadow-sm overflow-hidden border">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-[10px] font-bold uppercase text-slate-500">
-                            <tr><th class="p-6">Parça Adı</th><th class="p-6 text-center">Stok</th><th class="p-6 text-right">Fiyat</th><th class="p-6 text-right">İşlem</th></tr>
-                        </thead>
-                        <tbody id="stok-list"></tbody>
-                    </table>
-                </div>
+            <div class="bg-white rounded-3xl shadow-sm overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px]">
+                        <tr><th class="p-5">Parça / Kod</th><th class="p-5">Kategori</th><th class="p-5 text-center">Stok</th><th class="p-5 text-right">İşlem</th></tr>
+                    </thead>
+                    <tbody id="stok-list"></tbody>
+                </table>
             </div>
+        </div>
 
-            <div id="page-fatura" class="page-content">
-                <h3 class="text-2xl font-bold mb-8 uppercase">Fatura ve Satış</h3>
-                <div class="bg-white p-10 rounded-3xl shadow-lg max-w-2xl space-y-4">
-                    <input id="fat-ad" type="text" placeholder="Müşteri Ad Soyad" class="w-full p-4 bg-slate-50 rounded-xl border-none font-bold">
-                    <select id="fat-parca" class="w-full p-4 bg-slate-50 rounded-xl border-none font-bold"></select>
-                    <input id="fat-adet" type="number" placeholder="Adet" class="w-full p-4 bg-slate-50 rounded-xl border-none font-bold">
-                    <button onclick="faturaKes()" class="w-full bg-orange-600 text-white font-black py-5 rounded-xl shadow-lg hover:bg-orange-700 uppercase">Satışı Onayla</button>
-                </div>
+        <div id="page-fatura" class="page-content">
+            <h2 class="text-2xl font-bold mb-8 uppercase">Satış ve Fatura İşlemi</h2>
+            <div class="bg-white p-10 rounded-3xl shadow-xl max-w-2xl space-y-4">
+                <input id="fat-ad" type="text" placeholder="Müşteri Ad Soyad" class="w-full p-4 bg-slate-50 rounded-xl border-none font-bold">
+                <input id="fat-tel" type="text" placeholder="Telefon Numarası" class="w-full p-4 bg-slate-50 rounded-xl border-none font-bold">
+                <select id="fat-parca" class="w-full p-4 bg-slate-50 rounded-xl border-none font-bold"></select>
+                <input id="fat-adet" type="number" placeholder="Adet" class="w-full p-4 bg-slate-50 rounded-xl border-none font-bold">
+                <button onclick="faturaKes()" class="w-full bg-orange-600 text-white font-black py-5 rounded-xl shadow-lg hover:bg-orange-700 uppercase">Faturayı Onayla ve Kaydet</button>
             </div>
+        </div>
 
-            <div id="page-log" class="page-content">
-                <h3 class="text-2xl font-bold mb-8 uppercase">Satış Geçmişi</h3>
-                <div class="bg-white rounded-3xl shadow-sm border overflow-hidden">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 text-[10px] font-bold uppercase text-slate-500">
-                            <tr><th class="p-6">Müşteri</th><th class="p-6">Parça</th><th class="p-6 text-center">Adet</th><th class="p-6 text-right">Tarih</th></tr>
-                        </thead>
-                        <tbody id="fatura-list"></tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-    </div>
+        <div id="page-cari" class="page-content">
+            <h2 class="text-2xl font-bold mb-8 uppercase">Cari Müşteri Rehberi</h2>
+            <div id="cari-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+    </main>
 
     <script>
-        // Giriş Kontrolü
-        function handleLogin() {
-            if(document.getElementById('log-user').value === "ozcanoto" && document.getElementById('log-pass').value === "eren9013") {
-                localStorage.setItem('ozcan_active', 'true');
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('main-section').classList.remove('hidden');
-                showPage('dashboard');
-            } else alert("Hatalı Giriş!");
-        }
-
-        function handleLogout() {
-            localStorage.removeItem('ozcan_active');
-            location.reload();
-        }
-
         async function yukleStok() {
             const res = await fetch('/api/products');
             const data = await res.json();
-            const q = document.getElementById('search').value.toLowerCase();
-            const filtered = data.filter(i => i.name.toLowerCase().includes(q));
             
-            document.getElementById('stok-list').innerHTML = filtered.map(i => `
-                <tr class="${i.stock < 3 ? 'critical-stock' : 'border-t'}">
-                    <td class="p-6 font-bold uppercase">${i.name}</td>
-                    <td class="p-6 text-center font-black">${i.stock}</td>
-                    <td class="p-6 text-right font-bold">₺${i.price}</td>
-                    <td class="p-6 text-right"><button onclick="sil('${i._id}','products')" class="text-red-400"><i class="fas fa-trash"></i></button></td>
+            document.getElementById('stok-list').innerHTML = data.map(i => `
+                <tr class="border-t ${i.stock <= 2 ? 'critical' : ''}">
+                    <td class="p-5"><b>${i.name.toUpperCase()}</b><br><small>${i.code}</small></td>
+                    <td class="p-5 uppercase text-[10px] font-bold text-slate-400">${i.category}</td>
+                    <td class="p-5 text-center">
+                        <button onclick="guncelle('${i._id}', 1)" class="px-2 text-green-600 font-bold">+</button>
+                        <b class="mx-3 text-lg">${i.stock}</b>
+                        <button onclick="guncelle('${i._id}', -1)" class="px-2 text-red-600 font-bold">-</button>
+                    </td>
+                    <td class="p-5 text-right">
+                        <button onclick="sil('${i._id}', 'products')" class="text-slate-300 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                    </td>
                 </tr>`).join('');
             
             document.getElementById('fat-parca').innerHTML = data.map(i => `<option value="${i._id}">${i.name.toUpperCase()} (Kalan: ${i.stock})</option>`).join('');
         }
 
+        async function parcaEkle() {
+            const data = {
+                name: document.getElementById('new-name').value,
+                code: document.getElementById('new-code').value,
+                category: document.getElementById('new-cat').value,
+                stock: document.getElementById('new-stock').value,
+                price: "0"
+            };
+            if(!data.name) return alert("Parça adı zorunlu!");
+            await fetch('/api/products', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+            yukleStok();
+        }
+
+        async function guncelle(id, miktar) {
+            await fetch(`/api/products/update/${id}`, {
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({miktar})
+            });
+            yukleStok();
+        }
+
         async function faturaKes() {
             const payload = {
                 ad: document.getElementById('fat-ad').value,
+                tel: document.getElementById('fat-tel').value,
                 parcaId: document.getElementById('fat-parca').value,
-                adet: document.getElementById('fat-adet').value,
+                adet: document.getElementById('fat-adet').value || 1,
                 tarih: new Date().toLocaleString('tr-TR')
             };
-            const res = await fetch('/api/fatura-kes', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-            if(res.ok) { alert("Satış Başarılı!"); yukleStok(); }
+            if(!payload.ad || !payload.tel) return alert("Müşteri bilgileri eksik!");
+            await fetch('/api/fatura-kes', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+            alert("Satış Kaydedildi, Cari Rehbere Eklendi!");
+            yukleStok();
+        }
+
+        async function yukleCari() {
+            const res = await fetch('/api/customers');
+            const data = await res.json();
+            document.getElementById('cari-list').innerHTML = data.map(c => `
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-black uppercase text-slate-800">${c.ad}</h4>
+                        <p class="text-xs text-slate-400 font-bold">${c.tel}</p>
+                    </div>
+                    <button onclick="sil('${c._id}', 'customers')" class="text-red-200 hover:text-red-500"><i class="fas fa-user-minus"></i></button>
+                </div>`).join('');
         }
 
         function showPage(p) {
@@ -156,53 +166,28 @@
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('sidebar-active'));
             document.getElementById('page-' + p).classList.add('active-section');
             document.getElementById('btn-' + p).classList.add('sidebar-active');
-            yukleStok();
-            if(p === 'log') yukleGecmis();
+            if(p === 'stok') yukleStok();
+            if(p === 'cari') yukleCari();
         }
 
-        async function yukleGecmis() {
-            const res = await fetch('/api/invoices');
-            const data = await res.json();
-            document.getElementById('fatura-list').innerHTML = data.reverse().map(i => `
-                <tr class="border-t">
-                    <td class="p-6 font-bold uppercase">${i.ad}</td>
-                    <td class="p-6">${i.parca_ad}</td>
-                    <td class="p-6 text-center font-bold text-orange-600">${i.adet}</td>
-                    <td class="p-6 text-right text-[10px] font-bold uppercase">${i.tarih}</td>
-                </tr>`).join('');
-        }
-
-        async function exportToExcel(type) {
-            const res = await fetch(`/api/${type}`);
+        async function exportExcel(api) {
+            const res = await fetch(`/api/${api}`);
             const data = await res.json();
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Rapor");
-            XLSX.writeFile(wb, `OzcanOto_${type}.xlsx`);
-        }
-
-        async function sendGmailReport(type) {
-            const res = await fetch(`/api/${type}`);
-            const data = await res.json();
-            let body = "ÖZCAN OTO GÜNLÜK RAPOR\n\n";
-            data.forEach(i => body += `PARÇA: ${i.name} - STOK: ${i.stock}\n`);
-            window.location.href = `mailto:?subject=Stok Raporu&body=${encodeURIComponent(body)}`;
+            XLSX.utils.book_append_sheet(wb, ws, "Loglar");
+            XLSX.writeFile(wb, `OzcanOto_${api}_Log.xlsx`);
         }
 
         async function sil(id, col) {
-            if(confirm('SİLİNSİN Mİ?')) {
+            if(confirm('Veriyi silmek istediğinize emin misiniz?')) {
                 await fetch(`/api/${col}/${id}`, {method: 'DELETE'});
-                yukleStok();
+                p = col === 'products' ? 'stok' : 'cari';
+                showPage(p);
             }
         }
 
-        window.onload = () => {
-            if(localStorage.getItem('ozcan_active')) {
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('main-section').classList.remove('hidden');
-                showPage('dashboard');
-            }
-        };
+        window.onload = () => showPage('dashboard');
     </script>
 </body>
 </html>
