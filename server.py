@@ -108,6 +108,17 @@ HTML_PANEL = r"""
                         <i class="fas fa-envelope text-3xl text-orange-500"></i>
                     </div>
                 </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="custom-card p-8 border-l-4 border-slate-900">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kayıtlı Parça Çeşidi</p>
+                        <h4 id="dash-count" class="text-4xl font-extrabold text-slate-800 mt-2">0</h4>
+                    </div>
+                    <div class="custom-card p-8 border-l-4 border-red-500">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kritik Stok Uyarıları</p>
+                        <h4 id="dash-crit" class="text-4xl font-extrabold text-red-600 mt-2">0</h4>
+                    </div>
+                </div>
             </div>
 
             <div id="page-stok" class="page-content">
@@ -152,7 +163,7 @@ HTML_PANEL = r"""
                 <div class="flex justify-between items-center mb-8">
                     <h3 class="text-2xl font-bold text-slate-800 uppercase">Satış Geçmişi & Kayıtlar</h3>
                     <div class="flex gap-2">
-                         <button onclick="exportToExcel('invoices')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-file-excel mr-2"></i>Excel Raporu</button>
+                         <button onclick="exportToExcel('invoices')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-file-excel mr-2"></i>Excel İndir</button>
                          <button onclick="sendGmailReport('invoices')" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-envelope mr-2"></i>Gmail Paylaş</button>
                     </div>
                 </div>
@@ -216,34 +227,34 @@ HTML_PANEL = r"""
             const data = await res.json();
             const bugun = new Date().toLocaleDateString('tr-TR');
             
-            let sheetData = [];
+            let reportRows = [];
             
             if(type === 'products') {
-                sheetData.push(["ÖZCAN OTO GÜNLÜK STOK RAPORU - " + bugun]);
-                sheetData.push([]); // Boş satır
+                reportRows.push(["ÖZCAN OTO GÜNLÜK RAPOR - " + bugun]);
+                reportRows.push([]); 
                 data.forEach(i => {
-                    sheetData.push(["PARÇA: " + i.name]);
-                    sheetData.push(["KOD: " + i.code]);
-                    sheetData.push(["STOK: " + i.stock + " ADET"]);
-                    sheetData.push(["FİYAT: ₺" + i.price]);
-                    sheetData.push(["------------------"]);
+                    reportRows.push(["PARÇA: " + i.name]);
+                    reportRows.push(["KOD: " + i.code]);
+                    reportRows.push(["STOK: " + i.stock + " ADET"]);
+                    reportRows.push(["FİYAT: ₺" + i.price]);
+                    reportRows.push(["------------------"]);
                 });
                 let total = 0; data.forEach(p => total += (Number(p.stock) * Number(p.price)));
-                sheetData.push([]);
-                sheetData.push(["TOPLAM DEPO DEĞERİ: ₺" + total.toLocaleString('tr-TR')]);
+                reportRows.push([]);
+                reportRows.push(["TOPLAM DEPO DEĞERİ: ₺" + total.toLocaleString('tr-TR')]);
             } else {
-                sheetData.push(["ÖZCAN OTO GÜNLÜK SATIŞ RAPORU - " + bugun]);
-                sheetData.push([]);
+                reportRows.push(["ÖZCAN OTO GÜNLÜK SATIŞ RAPORU - " + bugun]);
+                reportRows.push([]);
                 data.forEach(i => {
-                    sheetData.push(["MÜŞTERİ: " + i.ad]);
-                    sheetData.push(["PARÇA: " + i.parca_ad]);
-                    sheetData.push(["ADET: " + i.adet]);
-                    sheetData.push(["TARİH: " + i.tarih]);
-                    sheetData.push(["------------------"]);
+                    reportRows.push(["MÜŞTERİ: " + i.ad]);
+                    reportRows.push(["PARÇA: " + i.parca_ad]);
+                    reportRows.push(["ADET: " + i.adet]);
+                    reportRows.push(["TARİH: " + i.tarih]);
+                    reportRows.push(["------------------"]);
                 });
             }
 
-            const ws = XLSX.utils.aoa_to_sheet(sheetData);
+            const ws = XLSX.utils.aoa_to_sheet(reportRows);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Rapor");
             XLSX.writeFile(wb, `OzcanOto_${type}_${bugun}.xlsx`);
@@ -332,7 +343,7 @@ HTML_PANEL = r"""
             if(data.ok) { 
                 document.getElementById('fat-adet').value = ''; 
                 yukleFatura(); 
-                alert("SATIŞ TAMAMLANDI VE CARİYE KAYDEDİLDİ"); 
+                alert("SATIŞ TAMAMLANDI"); 
             } else { alert("Hata: " + (data.error || "Bilinmiyor")); }
         }
 
@@ -462,4 +473,3 @@ def clear_collection(col):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
-
