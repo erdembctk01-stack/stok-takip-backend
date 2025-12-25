@@ -2,13 +2,13 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>ÖZCAN OTO PRO | YÖNETİM</title>
+    <title>ÖZCAN OTO PRO | YEDEKLEME MERKEZİ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; margin: 0; overflow: hidden; }
-        /* GİRİŞ EKRANI STİLİ */
-        #login-overlay { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; margin: 0; }
+        /* GİRİŞ EKRANI STİLLERİ */
+        #login-screen { position: fixed; inset: 0; background: #0f172a; z-index: 10000; display: flex; align-items: center; justify-content: center; }
         .sidebar { background: #0f172a; width: 280px; min-height: 100vh; color: white; flex-shrink: 0; }
         .page-content { display: none; padding: 40px; width: 100%; height: 100vh; overflow-y: auto; }
         .active-section { display: block; }
@@ -17,32 +17,31 @@
         .sidebar-active { background: #f97316 !important; color: white !important; font-weight: bold; }
         .critical { background: #fee2e2 !important; color: #dc2626 !important; }
         .btn-action { padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
-        #main-wrapper { display: flex; width: 100%; opacity: 0; pointer-events: none; transition: 0.5s; }
-        .logged-in #main-wrapper { opacity: 1; pointer-events: auto; }
-        .logged-in #login-overlay { display: none; }
+        /* ANA PANEL GİZLEME */
+        #main-layout { display: none; width: 100%; }
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
+    <div id="login-screen">
         <div class="bg-white p-10 rounded-3xl shadow-2xl w-96 text-center">
             <h1 class="text-3xl font-black italic mb-2 text-slate-900">ÖZCAN OTO</h1>
-            <p class="text-xs font-bold text-orange-500 uppercase mb-8 tracking-widest">Yönetim Paneli Girişi</p>
+            <p class="text-xs font-bold text-orange-500 uppercase mb-8 tracking-widest">Yönetim Paneli</p>
             <div class="space-y-4">
-                <input id="login-user" type="text" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500 transition">
-                <input id="login-pass" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500 transition">
-                <button onclick="checkLogin()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl hover:bg-orange-600 transition duration-300">GİRİŞ YAP</button>
+                <input id="user-in" type="text" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500 transition">
+                <input id="pass-in" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500 transition">
+                <button onclick="checkLogin()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl hover:bg-orange-600 transition">GİRİŞ YAP</button>
             </div>
-            <p id="login-error" class="text-red-500 text-xs mt-4 font-bold hidden italic underline">Hatalı bilgi, tekrar dene!</p>
+            <p id="error-msg" class="text-red-500 text-xs mt-4 font-bold hidden italic">Hatalı kullanıcı adı veya şifre!</p>
         </div>
     </div>
 
-    <div id="main-wrapper">
+    <div id="main-layout">
         <aside class="sidebar">
             <div class="p-8 border-b border-slate-800 text-center">
                 <h1 class="text-2xl font-black italic tracking-tighter">ÖZCAN OTO</h1>
                 <p class="text-[9px] text-orange-500 font-bold uppercase tracking-widest">Servis & Yedek Parça</p>
-                <div class="mt-2 inline-flex items-center bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                <div class="mt-3 inline-flex items-center bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
                     <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse mr-2"></span>
                     <span class="text-[10px] text-emerald-500 font-black uppercase">Sistem Aktif</span>
                 </div>
@@ -59,11 +58,12 @@
         <main class="flex-1">
             <div id="page-dashboard" class="page-content active-section">
                 <div class="flex justify-between items-center mb-10">
-                    <h2 class="text-3xl font-black mb-10 italic uppercase">Sistem Özeti</h2>
+                    <h2 class="text-3xl font-black italic uppercase">Sistem Özeti</h2>
                     <button onclick="sifirlaFinans()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-2xl font-bold text-xs shadow-lg transition uppercase">
                         <i class="fas fa-sync-alt mr-2"></i> Kazanç & Giderleri Sıfırla
                     </button>
                 </div>
+                
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     <div class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-emerald-500">
                         <p class="text-xs font-bold text-slate-400 uppercase mb-2">Toplam Kazanç</p>
@@ -76,7 +76,7 @@
                     <div class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-blue-600">
                         <p class="text-xs font-bold text-slate-400 uppercase mb-2">Stok Değeri</p>
                         <h3 id="dash-deger" class="text-3xl font-black text-slate-800">****</h3>
-                        <button onclick="hesaplaDashboard()" class="mt-4 text-[10px] bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold uppercase">Hesapla</button>
+                        <button onclick="hesaplaDashboard()" class="mt-4 text-[10px] bg-blue-50 text-blue-600 px-4 py-2 rounded-full font-bold uppercase">Değeri Göster</button>
                     </div>
                 </div>
             </div>
@@ -85,34 +85,48 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-black italic">PARÇA YÖNETİMİ</h2>
                     <div class="flex gap-2">
-                        <button onclick="exportExcel('products')" class="bg-green-600 text-white btn-action"><i class="fas fa-download mr-1"></i> Yedek Al</button>
+                        <button onclick="exportExcel('products')" class="bg-green-600 text-white btn-action"><i class="fas fa-download mr-1"></i> Excel Yedek</button>
+                        <button onclick="sendGmail('products')" class="bg-orange-600 text-white btn-action"><i class="fas fa-envelope mr-1"></i> Gmail Yedek</button>
                     </div>
                 </div>
                 <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-5 gap-3">
                     <input id="new-name" type="text" placeholder="Parça Adı" class="p-3 bg-slate-50 rounded-xl border outline-none">
-                    <input id="new-code" type="text" placeholder="Kod" class="p-3 bg-slate-50 rounded-xl border outline-none">
+                    <input id="new-code" type="text" placeholder="Kodu" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     <input id="new-cat" type="text" placeholder="Kategori" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     <input id="new-price" type="text" placeholder="Fiyat" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     <input id="new-stock" type="number" placeholder="Adet" class="p-3 bg-slate-50 rounded-xl border outline-none">
-                    <button onclick="parcaEkle()" class="bg-slate-900 text-white rounded-xl font-bold uppercase text-xs md:col-span-5 py-3">Kaydet</button>
+                    <button onclick="parcaEkle()" class="bg-slate-900 text-white rounded-xl font-bold uppercase text-xs md:col-span-5 py-3">Yeni Parça Kaydet</button>
                 </div>
                 <div class="bg-white rounded-3xl shadow-sm border overflow-hidden">
-                    <table class="w-full text-left"><tbody id="stok-list"></tbody></table>
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase">
+                            <tr><th class="p-5">Parça</th><th class="p-5">Kategori</th><th class="p-5 text-center">Stok</th><th class="p-5 text-right">İşlem</th></tr>
+                        </thead>
+                        <tbody id="stok-list"></tbody>
+                    </table>
                 </div>
             </div>
 
             <div id="page-fatura" class="page-content">
-                <h2 class="text-2xl font-black mb-6 italic italic uppercase">SATIŞ KAYITLARI</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-black italic">SATIŞ KAYITLARI</h2>
+                    <div class="flex gap-2">
+                        <button onclick="exportExcel('invoices')" class="bg-green-600 text-white btn-action"><i class="fas fa-download mr-1"></i> Satış Excel</button>
+                        <button onclick="sendGmail('invoices')" class="bg-orange-600 text-white btn-action"><i class="fas fa-envelope mr-1"></i> Satış Gmail</button>
+                    </div>
+                </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="bg-white p-8 rounded-3xl shadow-xl border space-y-4">
                         <input id="fat-ad" type="text" placeholder="Müşteri Adı" class="w-full p-4 bg-slate-50 rounded-xl border outline-none">
                         <input id="fat-tel" type="text" placeholder="Telefon" class="w-full p-4 bg-slate-50 rounded-xl border outline-none">
                         <select id="fat-parca" class="w-full p-4 bg-slate-50 rounded-xl border outline-none font-bold"></select>
                         <input id="fat-adet" type="number" placeholder="Adet" class="w-full p-4 bg-slate-50 rounded-xl border outline-none">
-                        <button onclick="faturaKes()" class="w-full bg-orange-600 text-white font-black py-4 rounded-xl uppercase italic">Fatura Kes</button>
+                        <button onclick="faturaKes()" class="w-full bg-orange-600 text-white font-black py-4 rounded-xl uppercase">Fatura Kes</button>
                     </div>
                     <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border overflow-hidden">
-                        <table class="w-full text-left text-sm"><tbody id="fatura-list"></tbody></table>
+                        <table class="w-full text-left text-sm">
+                            <tbody id="fatura-list"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -137,23 +151,26 @@
     <script>
         // GİRİŞ KONTROLÜ
         function checkLogin() {
-            const user = document.getElementById('login-user').value;
-            const pass = document.getElementById('login-pass').value;
-            const error = document.getElementById('login-error');
-
-            if(user === "ozcanoto" && pass === "eren9013") {
-                document.body.classList.add('logged-in');
+            const user = document.getElementById('user-in').value;
+            const pass = document.getElementById('pass-in').value;
+            if(user === 'ozcanoto' && pass === 'eren9013') {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-layout').style.display = 'flex';
                 showPage('dashboard');
             } else {
-                error.classList.remove('hidden');
+                document.getElementById('error-msg').classList.remove('hidden');
             }
         }
 
-        // --- MEVCUT SİSTEM FONKSİYONLARI ---
+        // SIFIRLAMA FONKSİYONU
         async function sifirlaFinans() {
-            if(confirm('Tüm finansal veriler sıfırlansın mı?')) {
+            if(confirm('DİKKAT! Tüm satış (kazanç) ve gider kayıtları kalıcı olarak silinecektir. Bu işlem geri alınamaz. Onaylıyor musunuz?')) {
                 const res = await fetch('/api/reset-finance', { method: 'POST' });
-                if(res.ok) { alert('Sıfırlandı.'); loadStats(); }
+                const result = await res.json();
+                if(result.ok) {
+                    alert('Finansal veriler sıfırlandı.');
+                    loadStats();
+                }
             }
         }
 
@@ -161,12 +178,21 @@
             const res = await fetch(`/api/${api}`);
             const data = await res.json();
             const bugun = new Date().toLocaleString('tr-TR');
-            let output = `ÖZCAN OTO - ${api.toUpperCase()} YEDEK - ${bugun}\n----------------------------------\n`;
+            let output = `ÖZCAN OTO - ${api.toUpperCase()} YEDEK LİSTESİ - ${bugun}\n`;
+            output += `--------------------------------------------------\n`;
             data.forEach((item, index) => {
-                if(api === 'products') output += `${index + 1}. ${item.name} | STOK: ${item.stock}\n`;
-                else if(api === 'invoices') output += `${index + 1}. ${item.ad} | ${item.toplam}₺\n`;
+                if(api === 'products') {
+                    output += `${index + 1}. PARÇA: ${item.name} | KOD: ${item.code} | KATEGORİ: ${item.category} | STOK: ${item.stock}\n`;
+                } else if(api === 'invoices') {
+                    output += `${index + 1}. MÜŞTERİ: ${item.ad} | PARÇA: ${item.parca_ad} | TUTAR: ${item.toplam}₺ | TARİH: ${item.tarih}\n`;
+                }
             });
             return output;
+        }
+
+        async function sendGmail(api) {
+            const bodyText = await getFormattedData(api);
+            window.location.href = `mailto:?subject=Ozcan Oto Yedek ${api}&body=${encodeURIComponent(bodyText)}`;
         }
 
         async function exportExcel(api) {
@@ -174,17 +200,16 @@
             const blob = new Blob(["\ufeff" + bodyText], { type: "text/plain;charset=utf-8" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
-            a.href = url; a.download = `OzcanOto_${api}.txt`; a.click();
+            a.href = url;
+            a.download = `OzcanOto_${api}_Yedek.txt`;
+            a.click();
         }
 
         function showPage(p) {
             document.querySelectorAll('.page-content').forEach(s => s.classList.remove('active-section'));
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('sidebar-active'));
-            const el = document.getElementById('page-' + p);
-            if(el) el.classList.add('active-section');
-            const btn = document.getElementById('btn-' + p);
-            if(btn) btn.classList.add('sidebar-active');
-            
+            document.getElementById('page-' + p).classList.add('active-section');
+            document.getElementById('btn-' + p).classList.add('sidebar-active');
             if(p === 'stok') yukleStok();
             if(p === 'fatura') { yukleFaturalar(); yukleStok(); }
             if(p === 'cari') yukleCari();
@@ -198,6 +223,7 @@
             document.getElementById('stok-list').innerHTML = data.map(i => `
                 <tr class="border-t ${i.stock <= 2 ? 'critical' : ''}">
                     <td class="p-5 font-bold uppercase">${i.name}<br><small>${i.code}</small></td>
+                    <td class="p-5 text-xs font-bold uppercase">${i.category}</td>
                     <td class="p-5 text-center">
                         <button onclick="guncelle('${i._id}', 1)" class="text-green-600 px-2 font-bold text-xl">+</button>
                         <span class="mx-3 font-black">${i.stock}</span>
@@ -206,15 +232,43 @@
                     <td class="p-5 text-right"><button onclick="sil('${i._id}', 'products')" class="text-slate-300 hover:text-red-500"><i class="fas fa-trash"></i></button></td>
                 </tr>`).join('');
             if(document.getElementById('fat-parca')) {
-                document.getElementById('fat-parca').innerHTML = data.map(i => `<option value="${i._id}">${i.name.toUpperCase()} (${i.stock})</option>`).join('');
+                document.getElementById('fat-parca').innerHTML = data.map(i => `<option value="${i._id}">${i.name.toUpperCase()} (${i.stock} Adet)</option>`).join('');
             }
+        }
+
+        async function parcaEkle() {
+            const data = { name: document.getElementById('new-name').value, code: document.getElementById('new-code').value, category: document.getElementById('new-cat').value, price: document.getElementById('new-price').value || "0", stock: document.getElementById('new-stock').value };
+            if(!data.name) return alert("Ad gerekli!");
+            await fetch('/api/products', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+            yukleStok();
+            document.querySelectorAll('input').forEach(input => input.value = "");
+        }
+
+        async function guncelle(id, miktar) {
+            await fetch(`/api/products/update/${id}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({miktar})});
+            yukleStok();
         }
 
         async function yukleFaturalar() {
             const res = await fetch('/api/invoices');
             const data = await res.json();
             document.getElementById('fatura-list').innerHTML = data.map(f => `
-                <tr class="border-b"><td class="p-4"><b>${f.ad}</b></td><td class="p-4">₺${f.toplam}</td><td class="p-4 text-right"><button onclick="sil('${f._id}', 'invoices')" class="text-slate-300"><i class="fas fa-times"></i></button></td></tr>`).join('');
+                <tr class="border-b">
+                    <td class="p-4"><b>${f.ad}</b><br><small>${f.tarih}</small></td>
+                    <td class="p-4 text-xs font-bold text-orange-600">${f.parca_ad}</td>
+                    <td class="p-4 font-black">₺${f.toplam}</td>
+                    <td class="p-4 text-right"><button onclick="sil('${f._id}', 'invoices')" class="text-slate-300 hover:text-red-500"><i class="fas fa-times"></i></button></td>
+                </tr>`).join('');
+        }
+
+        async function faturaKes() {
+            const data = { ad: document.getElementById('fat-ad').value, tel: document.getElementById('fat-tel').value, parcaId: document.getElementById('fat-parca').value, adet: document.getElementById('fat-adet').value || 1, tarih: new Date().toLocaleString('tr-TR') };
+            await fetch('/api/fatura-kes', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
+            alert("Fatura Kaydedildi!");
+            yukleFaturalar();
+            yukleStok();
+            document.getElementById('fat-ad').value = "";
+            document.getElementById('fat-tel').value = "";
         }
 
         async function loadStats() {
@@ -234,45 +288,40 @@
             const res = await fetch('/api/expenses');
             const data = await res.json();
             document.getElementById('gider-list').innerHTML = data.map(e => `
-                <div class="bg-white p-4 rounded-xl border flex justify-between items-center"><b>${e.aciklama}</b><span>₺${e.tutar}</span><button onclick="sil('${e._id}', 'expenses')">X</button></div>`).join('');
-        }
-
-        async function sil(id, col) {
-            if(confirm('Silinsin mi?')) {
-                await fetch(`/api/${col}/${id}`, {method: 'DELETE'});
-                showPage(document.querySelector('.sidebar-active').id.replace('btn-', ''));
-            }
-        }
-
-        async function parcaEkle() {
-            const data = { name: document.getElementById('new-name').value, code: document.getElementById('new-code').value, category: document.getElementById('new-cat').value, price: document.getElementById('new-price').value || "0", stock: document.getElementById('new-stock').value };
-            await fetch('/api/products', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-            yukleStok();
-        }
-
-        async function guncelle(id, miktar) {
-            await fetch(`/api/products/update/${id}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({miktar})});
-            yukleStok();
-        }
-
-        async function faturaKes() {
-            const data = { ad: document.getElementById('fat-ad').value, tel: document.getElementById('fat-tel').value, parcaId: document.getElementById('fat-parca').value, adet: document.getElementById('fat-adet').value || 1, tarih: new Date().toLocaleString('tr-TR') };
-            await fetch('/api/fatura-kes', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-            yukleFaturalar(); yukleStok();
+                <div class="bg-white p-4 rounded-xl border flex justify-between items-center">
+                    <div><b>${e.aciklama}</b><br><span class="text-red-600">₺${e.tutar}</span></div>
+                    <button onclick="sil('${e._id}', 'expenses')" class="text-slate-300"><i class="fas fa-trash"></i></button>
+                </div>`).join('');
         }
 
         async function giderEkle() {
             const data = { aciklama: document.getElementById('exp-name').value, tutar: document.getElementById('exp-amount').value };
             await fetch('/api/expenses', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
             yukleGider();
+            document.getElementById('exp-name').value = "";
+            document.getElementById('exp-amount').value = "";
         }
 
         async function yukleCari() {
             const res = await fetch('/api/customers');
             const data = await res.json();
-            document.getElementById('cari-list').innerHTML = data.map(c => `<div class="bg-white p-5 border rounded-2xl"><b>${c.ad}</b><p>${c.tel}</p></div>`).join('');
+            document.getElementById('cari-list').innerHTML = data.map(c => `
+                <div class="bg-white p-5 rounded-2xl border flex justify-between items-center">
+                    <div><h4 class="font-black">${c.ad}</h4><p class="text-xs">${c.tel}</p></div>
+                    <button onclick="sil('${c._id}', 'customers')" class="text-red-100"><i class="fas fa-user-minus"></i></button>
+                </div>`).join('');
         }
 
+        async function sil(id, col) {
+            if(confirm('Silinsin mi?')) {
+                await fetch(`/api/${col}/${id}`, {method: 'DELETE'});
+                if(col === 'products') yukleStok();
+                else if(col === 'invoices') yukleFaturalar();
+                else if(col === 'expenses') yukleGider();
+                else if(col === 'customers') yukleCari();
+                loadStats();
+            }
+        }
     </script>
 </body>
 </html>
