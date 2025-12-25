@@ -18,18 +18,13 @@
         .btn-action { padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
         .btn-action:hover { opacity: 0.8; }
         #main-layout { display: none; width: 100%; }
-        /* Yanıp sönen ışık efekti */
-        .status-dot { height: 8px; width: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 8px #22c55e; }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
         <div class="bg-white p-10 rounded-3xl shadow-2xl w-96 text-center">
-            <h1 class="text-3xl font-black italic mb-2 text-slate-900">ÖZCAN OTO</h1>
-            <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-8 flex items-center justify-center">
-                <span class="status-dot"></span> Sistem Aktif
-            </p>
+            <h1 class="text-3xl font-black italic mb-8 text-slate-900">ÖZCAN OTO</h1>
             <div id="login-form" class="space-y-4">
                 <input id="user-in" type="text" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500">
                 <input id="pass-in" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500">
@@ -41,10 +36,7 @@
     <div id="main-layout">
         <aside class="sidebar">
             <div class="p-8 border-b border-slate-800 text-center">
-                <h1 class="text-2xl font-black italic text-white leading-tight">ÖZCAN OTO</h1>
-                <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-[0.2em] mt-1 flex items-center justify-center">
-                    <span class="status-dot" style="width:6px; height:6px;"></span> Sistem Aktif
-                </p>
+                <h1 class="text-2xl font-black italic text-white">ÖZCAN OTO</h1>
             </div>
             <nav class="mt-6 flex-1">
                 <div onclick="showPage('dashboard')" id="btn-dashboard" class="sidebar-link sidebar-active"><i class="fas fa-home mr-3"></i> Dashboard</div>
@@ -82,7 +74,6 @@
                     <h2 class="text-3xl font-black italic uppercase">Satış Yap</h2>
                     <div class="flex gap-2">
                         <button onclick="exportExcel('invoices')" class="bg-green-600 text-white btn-action">Excel</button>
-                        <button onclick="sendGmail('invoices')" class="bg-orange-600 text-white btn-action">Mail</button>
                         <button onclick="openImportModal('invoices')" class="bg-blue-600 text-white btn-action">Veri Yükle</button>
                     </div>
                 </div>
@@ -111,7 +102,6 @@
                     <h2 class="text-3xl font-black italic uppercase">Parça Yönetimi</h2>
                     <div class="flex gap-2">
                         <button onclick="exportExcel('products')" class="bg-green-600 text-white btn-action">Excel</button>
-                        <button onclick="sendGmail('products')" class="bg-orange-600 text-white btn-action">Mail</button>
                         <button onclick="openImportModal('products')" class="bg-blue-600 text-white btn-action">Veri Yükle</button>
                     </div>
                 </div>
@@ -136,10 +126,7 @@
             <div id="page-cari" class="page-content">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-3xl font-black italic uppercase">Cari Rehber</h2>
-                    <div class="flex gap-2">
-                        <button onclick="exportExcel('customers')" class="bg-green-600 text-white btn-action">Excel</button>
-                        <button onclick="openImportModal('customers')" class="bg-blue-600 text-white btn-action">Veri Yükle</button>
-                    </div>
+                    <button onclick="openImportModal('customers')" class="bg-blue-600 text-white btn-action">Veri Yükle</button>
                 </div>
                 <div id="cari-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </div>
@@ -201,7 +188,7 @@
             document.getElementById('dash-deger').innerText = s.depo;
         }
 
-        // --- VERİ YÜKLEME ---
+        // --- VERİ YÜKLEME (IMPORT) MANTIĞI ---
         let currentImportCol = '';
         function openImportModal(col) {
             currentImportCol = col;
@@ -233,20 +220,7 @@
             });
         }
 
-        // --- MAIL RAPORLAMA ---
-        async function sendGmail(api) {
-            const res = await fetch(`${API_URL}/${api}`);
-            const data = await res.json();
-            let body = "ÖZCAN OTO RAPORU\n\n";
-            data.forEach(i => {
-                if(api === 'products') body += `${i.name} - Stok: ${i.stock} - Maliyet: ${i.price} TL\n`;
-                if(api === 'invoices') body += `${f.tarih}: ${i.ad} - ${i.parca_ad} (${i.toplam} TL)\n`;
-                if(api === 'customers') body += `${i.ad} - Tel: ${i.tel}\n`;
-            });
-            window.location.href = `mailto:?subject=OzcanOto_${api}_Raporu&body=${encodeURIComponent(body)}`;
-        }
-
-        // --- STOK ---
+        // --- STOK İŞLEMLERİ ---
         async function parcaEkle() {
             const data = {
                 name: document.getElementById('new-name').value,
@@ -284,7 +258,7 @@
             yukleStok();
         }
 
-        // --- SATIŞ ---
+        // --- SATIŞ / FATURA ---
         async function faturaKes() {
             const data = {
                 ad: document.getElementById('fat-ad').value,
@@ -311,7 +285,7 @@
                 </tr>`).join('');
         }
 
-        // --- GİDER ---
+        // --- GİDER EKLE ---
         async function giderEkle() {
             const data = {
                 aciklama: document.getElementById('exp-name').value,
@@ -331,7 +305,6 @@
                 </div>`).join('');
         }
 
-        // --- CARİ ---
         async function yukleCari() {
             const res = await fetch(`${API_URL}/customers`);
             const data = await res.json();
