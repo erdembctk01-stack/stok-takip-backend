@@ -1,31 +1,41 @@
-from bson.objectid import ObjectId
-
-def fatura_kes(db, data):
-    parca_id = data.get('parcaId')
+@app.route('/api/fatura-kes', methods=['POST'])
+def fatura_kes():
+    data = request.json
+    # Parça bilgilerini çekiyoruz
+    product = db.products.find_one({"_id": ObjectId(data['parcaId'])})
+    
+    # Arayüzden gelen fiyatı alıyoruz (Eğer boşsa 0 kabul et)
+    # float(data['fiyat']) sayesinde 1 TL yazarsan 1 TL olarak işlenir
+    satis_fiyati = float(data.get('fiyat', 0))
     adet = int(data.get('adet', 1))
-    parca = db.products.find_one({"_id": ObjectId(parca_id)})
-    
-    if not parca: return {"ok": False}
-    
-    # Stok Düş
-    db.products.update_one({"_id": ObjectId(parca_id)}, {"$inc": {"stock": -adet}})
-    
-    fiyat = float(str(parca.get('price', 0)).replace('.', '').replace(',', '.'))
-    toplam = fiyat * adet
-    
-    fatura_verisi = {
+    toplam_tutar = satis_fiyati * adet
+
+    fatura = {
         "ad": data['ad'],
-        "tel": data.get('tel', '-'),
-        "parca_ad": parca['name'],
+        "tel": data.get('tel', ""),
+        "parca_id": data['parcaId'],
+        "parca_ad": product['name'],
         "adet": adet,
-        "tarih": data['tarih'],
-        "toplam": toplam
+        "birim_fiyat": satis_fiyati,
+        "toplam": toplam_tutar,
+        "tarih": data['tarih']
     }
     
-    db.invoices.insert_one(fatura_verisi)
-    db.customers.update_one(
-        {"tel": data.get('tel')},
-        {"$set": {"ad": data['ad'], "son_islem": data['tarih']}},
-        upsert=True
+    # Faturayı kaydet
+    db.invoices.insert_one(fatura)
+    
+    # Stoktan düş
+    db.products.update_one(
+        {"_id": ObjectId(data['parcaId'])},
+        {"$inc": {"stock": -adet}}
     )
-    return {"ok": True}
+    
+    # Cari rehbere ekle (Yoksa)
+    if data['ad']:
+        db.customers.update_one(
+            {"ad": data['ad']},
+            {"$set": {"tel": data.get('tel', "")}},
+            upsert=True
+        )
+        
+    return jsonify({"status": "success"})
