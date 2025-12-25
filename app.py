@@ -44,6 +44,7 @@ def update_stock(id):
 
 @app.route('/api/fatura-kes', methods=['POST'])
 def post_fatura():
+    # Frontend'den gelen fiyat verisi satis_yonetimi içinde değerlendirilir
     return jsonify(satis_yonetimi.fatura_kes(db, request.json))
 
 @app.route('/api/<col>/<id>', methods=['DELETE'])
