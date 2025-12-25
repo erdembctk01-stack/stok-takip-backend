@@ -5,7 +5,7 @@ from pymongo import MongoClient
 import stok_yonetimi 
 import satis_yonetimi
 
-# Flask'ın templates klasörünü kesin olarak bulmasını sağlıyoruz
+# Klasör yollarını kesinleştiriyoruz
 base_dir = os.path.abspath(os.path.dirname(__file__))
 template_dir = os.path.join(base_dir, 'templates')
 
@@ -19,11 +19,7 @@ db = client.stok_veritabani
 
 @app.route('/')
 def index():
-    # Sayfayı gönderirken oluşabilecek hataları yakalıyoruz
-    try:
-        return render_template('index.html')
-    except Exception as e:
-        return f"Dosya Bulunamadı Hatası: {str(e)}. Lütfen 'templates' klasörünü kontrol edin."
+    return render_template('index.html')
 
 @app.route('/api/products', methods=['GET'])
 def get_stok():
@@ -36,6 +32,10 @@ def delete_stok(id):
 @app.route('/api/fatura-kes', methods=['POST'])
 def post_fatura():
     return jsonify(satis_yonetimi.fatura_kes(db, request.json))
+
+@app.route('/api/invoices', methods=['GET'])
+def get_gecmis():
+    return jsonify(satis_yonetimi.satis_gecmisi(db))
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
