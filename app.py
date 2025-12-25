@@ -38,12 +38,22 @@ def fatura_kes():
         parca_id = data.get('parcaId')
         adet = int(data.get('adet', 0))
         parca = db.products.find_one({"_id": ObjectId(parca_id)})
+        
+        # Hata Çözümü: Stok değerini sayıya çeviriyoruz (int)
         current_stock = int(parca.get('stock', 0))
         db.products.update_one({"_id": ObjectId(parca_id)}, {"$set": {"stock": current_stock - adet}})
-        db.invoices.insert_one({"ad": data['ad'], "tel": data['tel'], "parca_id": parca_id, "parca_ad": parca['name'], "adet": adet, "tarih": data['tarih']})
+        
+        db.invoices.insert_one({
+            "ad": data['ad'], 
+            "tel": data['tel'], 
+            "parca_id": parca_id, 
+            "parca_ad": parca['name'], 
+            "adet": adet, 
+            "tarih": data['tarih']
+        })
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
