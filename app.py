@@ -1,41 +1,77 @@
-from flask import Flask, render_template, request, jsonify
+import os
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-import os
+import stok_yonetimi 
+import satis_yonetimi
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
+CORS(app)
 
-# MongoDB Bağlantısı (DNS hataları için connect=False eklendi)
-MONGO_URI = "mongodb+srv://ozcanoto:eren9013@cluster0.mongodb.net/ozcan_oto?retryWrites=true&w=majority"
-client = MongoClient(MONGO_URI, connect=False)
-db = client.ozcan_oto
-
-# DOSYA BAĞLANTILARI - init_db kullanarak db nesnesini gönderiyoruz
-from satis_yonetimi import satis_bp, init_db as satis_init
-from stok_yonetimi import stok_bp, init_db as stok_init
-
-# Veritabanı yetkisini alt dosyalara aktar
-satis_init(db)
-stok_init(db)
-
-app.register_blueprint(satis_bp)
-app.register_blueprint(stok_bp)
+MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(MONGO_URI)
+db = client.stok_veritabani
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@app.route('/api/<col>', methods=['GET', 'POST'])
+def handle_generic_api(col):
+    if request.method == 'GET':
+        items = list(db[col].find().sort('_id', -1))
+        for i in items: i['_id'] = str(i['_id'])
+        return jsonify(items)
+    
+    data = request.json
+    if col == 'products':
+        return jsonify(stok_yonetimi.parca_ekle(db, data))
+    
+    db[col].insert_one(data)
+    return jsonify({"ok": True})
+
+@app.route('/api/reset-finance', methods=['POST'])
+def reset_finance():
+    db.invoices.delete_many({}) 
+    db.expenses.delete_many({}) 
+    return jsonify({"ok": True})
+
+@app.route('/api/products/update/<id>', methods=['POST'])
+def update_stock(id):
+    miktar = request.json.get('miktar', 0)
+    return jsonify(stok_yonetimi.stok_guncelle(db, id, miktar))
+
+@app.route('/api/fatura-kes', methods=['POST'])
+def post_fatura():
+    # Frontend'den gelen fiyat verisi satis_yonetimi içinde değerlendirilir
+    return jsonify(satis_yonetimi.fatura_kes(db, request.json))
+
+@app.route('/api/<col>/<id>', methods=['DELETE'])
+def handle_delete(col, id):
+    db[col].delete_one({"_id": ObjectId(id)})
+    return jsonify({"ok": True})
+
 @app.route('/api/dashboard-stats', methods=['GET'])
 def get_stats():
-    try:
-        invoices = list(db.invoices.find())
-        kazanc = sum(inv.get('toplam', 0) for inv in invoices)
-        expenses = list(db.expenses.find())
-        gider = sum(exp.get('tutar', 0) for exp in expenses)
-        return jsonify({"kazanc": f"₺{kazanc}", "gider": f"₺{gider}", "depo": "₺0"})
-    except:
-        return jsonify({"kazanc": "₺0", "gider": "₺0", "depo": "₺0"})
+    invoices = list(db.invoices.find())
+    expenses = list(db.expenses.find())
+    products = list(db.products.find())
+    
+    def temizle(val):
+        try: return float(str(val).replace('₺', '').replace('.', '').replace(',', '.'))
+        except: return 0.0
+
+    toplam_kazanc = sum(temizle(i.get('toplam', 0)) for i in invoices)
+    toplam_gider = sum(temizle(e.get('tutar', 0)) for e in expenses)
+    depo_degeri = sum(int(p.get('stock', 0)) * temizle(p.get('price', 0)) for p in products)
+    
+    return jsonify({
+        "kazanc": f"₺{toplam_kazanc:,.2f}",
+        "gider": f"₺{toplam_gider:,.2f}",
+        "depo": f"₺{depo_degeri:,.2f}"
+    })
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
