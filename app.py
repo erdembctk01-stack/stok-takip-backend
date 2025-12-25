@@ -1,21 +1,21 @@
 from flask import Flask, render_template, request, jsonify
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from datetime import datetime
+from flask_cors import CORS
 import os
 
-# DOSYA BAĞLANTILARI
-from satis_yonetimi import satis_bp
-from stok_yonetimi import stok_bp
-
 app = Flask(__name__)
+CORS(app)
 
-# MONGODB BAĞLANTISI
+# MongoDB Bağlantısı
 MONGO_URI = "mongodb+srv://ozcanoto:eren9013@cluster0.mongodb.net/ozcan_oto?retryWrites=true&w=majority"
 client = MongoClient(MONGO_URI)
 db = client.ozcan_oto
 
-# BLUEPRINT KAYITLARI
+# Blueprint'leri burada import ediyoruz (Hata almamak için db tanımlandıktan sonra)
+from satis_yonetimi import satis_bp
+from stok_yonetimi import stok_bp
+
 app.register_blueprint(satis_bp)
 app.register_blueprint(stok_bp)
 
@@ -25,18 +25,21 @@ def index():
 
 @app.route('/api/dashboard-stats', methods=['GET'])
 def get_stats():
-    # Eski mantık: Sadece veritabanındaki toplamları döner
-    invoices = list(db.invoices.find())
-    kazanc = sum(inv.get('toplam', 0) for inv in invoices)
-    
-    expenses = list(db.expenses.find())
-    gider = sum(exp.get('tutar', 0) for exp in expenses)
-    
-    return jsonify({
-        "kazanc": f"₺{kazanc}",
-        "gider": f"₺{gider}",
-        "depo": "₺0"
-    })
+    try:
+        invoices = list(db.invoices.find())
+        kazanc = sum(inv.get('toplam', 0) for inv in invoices)
+        
+        expenses = list(db.expenses.find())
+        gider = sum(exp.get('tutar', 0) for exp in expenses)
+        
+        return jsonify({
+            "kazanc": f"₺{kazanc}",
+            "gider": f"₺{gider}",
+            "depo": "₺0"
+        })
+    except:
+        return jsonify({"kazanc": "₺0", "gider": "₺0", "depo": "₺0"})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
