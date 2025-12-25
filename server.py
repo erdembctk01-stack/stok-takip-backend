@@ -108,17 +108,6 @@ HTML_PANEL = r"""
                         <i class="fas fa-envelope text-3xl text-orange-500"></i>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="custom-card p-8 border-l-4 border-slate-900">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kayıtlı Parça Çeşidi</p>
-                        <h4 id="dash-count" class="text-4xl font-extrabold text-slate-800 mt-2">0</h4>
-                    </div>
-                    <div class="custom-card p-8 border-l-4 border-red-500">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kritik Stok Uyarıları</p>
-                        <h4 id="dash-crit" class="text-4xl font-extrabold text-red-600 mt-2">0</h4>
-                    </div>
-                </div>
             </div>
 
             <div id="page-stok" class="page-content">
@@ -163,7 +152,7 @@ HTML_PANEL = r"""
                 <div class="flex justify-between items-center mb-8">
                     <h3 class="text-2xl font-bold text-slate-800 uppercase">Satış Geçmişi & Kayıtlar</h3>
                     <div class="flex gap-2">
-                         <button onclick="exportToExcel('invoices')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-file-excel mr-2"></i>Excel İndir</button>
+                         <button onclick="exportToExcel('invoices')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-file-excel mr-2"></i>Excel Raporu</button>
                          <button onclick="sendGmailReport('invoices')" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-envelope mr-2"></i>Gmail Paylaş</button>
                     </div>
                 </div>
@@ -225,18 +214,39 @@ HTML_PANEL = r"""
         async function exportToExcel(type) {
             const res = await fetch(`/api/${type}`);
             const data = await res.json();
-            let mappedData = [];
+            const bugun = new Date().toLocaleDateString('tr-TR');
+            
+            let sheetData = [];
             
             if(type === 'products') {
-                mappedData = data.map(i => ({ "PARÇA": i.name, "KOD": i.code, "STOK": i.stock + " ADET", "FİYAT": "₺" + i.price }));
+                sheetData.push(["ÖZCAN OTO GÜNLÜK STOK RAPORU - " + bugun]);
+                sheetData.push([]); // Boş satır
+                data.forEach(i => {
+                    sheetData.push(["PARÇA: " + i.name]);
+                    sheetData.push(["KOD: " + i.code]);
+                    sheetData.push(["STOK: " + i.stock + " ADET"]);
+                    sheetData.push(["FİYAT: ₺" + i.price]);
+                    sheetData.push(["------------------"]);
+                });
+                let total = 0; data.forEach(p => total += (Number(p.stock) * Number(p.price)));
+                sheetData.push([]);
+                sheetData.push(["TOPLAM DEPO DEĞERİ: ₺" + total.toLocaleString('tr-TR')]);
             } else {
-                mappedData = data.map(i => ({ "MÜŞTERİ": i.ad, "PARÇA": i.parca_ad, "ADET": i.adet, "TARİH": i.tarih }));
+                sheetData.push(["ÖZCAN OTO GÜNLÜK SATIŞ RAPORU - " + bugun]);
+                sheetData.push([]);
+                data.forEach(i => {
+                    sheetData.push(["MÜŞTERİ: " + i.ad]);
+                    sheetData.push(["PARÇA: " + i.parca_ad]);
+                    sheetData.push(["ADET: " + i.adet]);
+                    sheetData.push(["TARİH: " + i.tarih]);
+                    sheetData.push(["------------------"]);
+                });
             }
 
-            const ws = XLSX.utils.json_to_sheet(mappedData);
+            const ws = XLSX.utils.aoa_to_sheet(sheetData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Rapor");
-            XLSX.writeFile(wb, `OzcanOto_${type}_${new Date().toLocaleDateString('tr-TR')}.xlsx`);
+            XLSX.writeFile(wb, `OzcanOto_${type}_${bugun}.xlsx`);
         }
 
         async function sendGmailReport(type) {
@@ -424,11 +434,9 @@ def fatura_kes():
         
         if not parca: return jsonify({"ok": False, "error": "Parca bulunamadı"}), 404
         
-        # HATA DÜZELTME: Mevcut stoğu zorla sayıya çeviriyoruz ($inc hatası almamak için)
         current_stock = int(parca.get('stock', 0))
         db.products.update_one({"_id": ObjectId(parca_id)}, {"$set": {"stock": current_stock - adet}})
         
-        # Faturayı Kaydet
         db.invoices.insert_one({
             "ad": data['ad'], 
             "tel": data['tel'], 
@@ -438,7 +446,6 @@ def fatura_kes():
             "tarih": data['tarih']
         })
         
-        # CARİ OTOMASYON: Müşteriyi Cari Rehbere Ekle (Zaten varsa telefon güncellenir)
         db.customers.update_one(
             {"ad": data['ad']},
             {"$set": {"ad": data['ad'], "tel": data['tel'], "tarih": datetime.now().strftime("%d.%m.%Y")}},
