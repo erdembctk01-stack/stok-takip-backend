@@ -1,34 +1,30 @@
 from flask import Blueprint, request, jsonify
 from bson.objectid import ObjectId
 from datetime import datetime
-import sys
 
-# satis_yonetimi.py - TAM HALİ
 satis_bp = Blueprint('satis_bp', __name__)
-
-# Veritabanı referansı için global bir değişken
 db = None
 
-def init_db(database_instance):
-    """Ana app.py'den gelen db bağlantısını buraya aktarır"""
+def init_db(db_instance):
+    """Ana app.py'den gelen veritabanı bağlantısını tanımlar"""
     global db
-    db = database_instance
+    db = db_instance
 
 @satis_bp.route('/api/fatura-kes', methods=['POST'])
 def fatura_kes():
     try:
-        global db
+        if db is None:
+            return jsonify({"status": "error", "message": "Veritabanı bağlantısı yok"}), 500
+            
         data = request.json
-        
         # Parça bilgilerini çekiyoruz
         product = db.products.find_one({"_id": ObjectId(data['parcaId'])})
         
         if not product:
-            return jsonify({"status": "error", "message": "Parça bulunamadı"}), 404
+            return jsonify({"status": "error", "message": "Parca bulunamadi"}), 404
 
-        # Kullanıcının girdiği fiyatı alıyoruz (HİÇBİR SINIRLAMA YOKTUR)
+        # Fiyat ayarını kullanıcıdan geldiği gibi alıyoruz (1 TL yazarsa 1 TL olur)
         try:
-            # Gelen verideki virgülü noktaya çevirip sayıya dönüştürür
             raw_fiyat = str(data.get('fiyat', '0')).replace(',', '.')
             satis_fiyati = float(raw_fiyat)
         except:
@@ -45,19 +41,19 @@ def fatura_kes():
             "adet": adet,
             "birim_fiyat": satis_fiyati,
             "toplam": toplam_tutar,
-            "tarih": data.get('tarih', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
+            "tarih": data.get('tarih', datetime.now().strftime('%d.%m.%Y %H:%M'))
         }
         
-        # 1. Faturayı kaydet
+        # Faturayı kaydet
         db.invoices.insert_one(fatura)
         
-        # 2. Stoktan düş
+        # Stoktan düş
         db.products.update_one(
             {"_id": ObjectId(data['parcaId'])},
             {"$inc": {"stock": -adet}}
         )
         
-        # 3. Müşteriyi Cari Rehber'e ekle/güncelle
+        # Müşteriyi Cari Rehber'e ekle/güncelle
         if data.get('ad'):
             db.customers.update_one(
                 {"ad": data['ad']},
@@ -65,15 +61,15 @@ def fatura_kes():
                 upsert=True
             )
             
-        return jsonify({"status": "success", "message": "Satış başarıyla kaydedildi"})
+        return jsonify({"status": "success", "message": "Satis basariyla kaydedildi"})
     except Exception as e:
-        print(f"HATA: {str(e)}") # Loglarda hatayı görmek için
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @satis_bp.route('/api/invoices', methods=['GET'])
 def get_invoices():
     try:
-        invoices = list(db.invoices.find().sort("_id", -1)) # En yeni en üstte
+        if db is None: return jsonify([])
+        invoices = list(db.invoices.find().sort("_id", -1))
         for inv in invoices:
             inv['_id'] = str(inv['_id'])
         return jsonify(invoices)
