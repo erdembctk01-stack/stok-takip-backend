@@ -145,7 +145,7 @@
                         <input id="fat-tel" type="text" placeholder="Telefon" class="w-full p-4 bg-slate-50 rounded-xl border outline-none">
                         <select id="fat-parca" class="w-full p-4 bg-slate-50 rounded-xl border outline-none font-bold"></select>
                         <input id="fat-adet" type="number" placeholder="Adet" class="w-full p-4 bg-slate-50 rounded-xl border outline-none">
-                        <input id="fat-fiyat" type="text" placeholder="Satış Fiyatı Yazın" class="w-full p-4 bg-orange-50 border-orange-200 rounded-xl border outline-none font-bold text-orange-700">
+                        <input id="fat-fiyat" type="text" placeholder="Satış Fiyatı Yazın (TL)" class="w-full p-4 bg-orange-50 border-orange-200 rounded-xl border outline-none font-bold text-orange-700">
                         <button onclick="faturaKes()" class="w-full bg-orange-600 text-white font-black py-4 rounded-xl uppercase">Satışı Tamamla</button>
                     </div>
                     <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border overflow-hidden">
@@ -230,7 +230,6 @@
 
         function logout() { if(confirm('Çıkış yapılsın mı?')) { localStorage.removeItem('oto_expiry'); window.location.reload(); } }
 
-        // FİLTRELEME VE ARAMA
         function filterStok() {
             const search = document.getElementById('stok-search').value.toLowerCase();
             const cat = document.getElementById('stok-cat-filter').value;
@@ -248,7 +247,6 @@
             select.innerHTML = '<option value="">Tüm Kategoriler</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        // YEDEKLEME (GMAIL EKLENDİ)
         async function getFormattedData(api) {
             const res = await fetch(`/api/${api}`);
             const data = await res.json();
@@ -277,7 +275,6 @@
             window.location.href = `mailto:?subject=Ozcan Oto Yedek ${api}&body=${encodeURIComponent(body)}`;
         }
 
-        // STOK İŞLEMLERİ
         async function yukleStok() {
             const res = await fetch('/api/products');
             allProducts = await res.json();
@@ -310,15 +307,24 @@
             document.querySelectorAll('#page-stok input').forEach(i => i.value = "");
         }
 
-        // SATIŞ
         async function faturaKes() {
             const fiyat = document.getElementById('fat-fiyat').value;
-            if(!fiyat) return alert("Lütfen Satış Fiyatı yazın!");
-            const data = { ad: document.getElementById('fat-ad').value, tel: document.getElementById('fat-tel').value, parcaId: document.getElementById('fat-parca').value, adet: document.getElementById('fat-adet').value || 1, fiyat: fiyat, tarih: new Date().toLocaleString('tr-TR') };
+            if(!fiyat || fiyat === "") return alert("Lütfen Satış Fiyatı yazın!");
+            const data = { 
+                ad: document.getElementById('fat-ad').value, 
+                tel: document.getElementById('fat-tel').value, 
+                parcaId: document.getElementById('fat-parca').value, 
+                adet: document.getElementById('fat-adet').value || 1, 
+                fiyat: fiyat, 
+                tarih: new Date().toLocaleString('tr-TR') 
+            };
             await fetch('/api/fatura-kes', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-            alert("Satış Kaydedildi!");
+            alert("Satış Yapıldı!");
             yukleFaturalar(); yukleStok();
-            document.getElementById('fat-ad').value = ""; document.getElementById('fat-fiyat').value = "";
+            document.getElementById('fat-ad').value = ""; 
+            document.getElementById('fat-tel').value = "";
+            document.getElementById('fat-fiyat').value = "";
+            loadStats();
         }
 
         async function yukleFaturalar() {
@@ -328,12 +334,11 @@
                 <tr class="border-b">
                     <td class="p-4"><b>${f.ad}</b><br><small>${f.tarih}</small></td>
                     <td class="p-4 text-xs font-bold text-orange-600">${f.parca_ad} x ${f.adet}</td>
-                    <td class="p-4 font-black">₺${f.toplam}</td>
+                    <td class="p-4 font-black text-emerald-600">₺${f.toplam}</td>
                     <td class="p-4 text-right"><button onclick="sil('${f._id}', 'invoices')" class="text-slate-300 hover:text-red-500"><i class="fas fa-times"></i></button></td>
                 </tr>`).join('');
         }
 
-        // DASHBOARD & FİNANS
         async function loadStats() {
             const res = await fetch('/api/dashboard-stats');
             const stats = await res.json();
@@ -354,7 +359,6 @@
             }
         }
 
-        // VERESİYE
         async function yukleVeresiye() {
             const res = await fetch('/api/veresiye');
             const data = await res.json();
@@ -374,7 +378,6 @@
             document.querySelectorAll('#page-veresiye input').forEach(i => i.value = "");
         }
 
-        // GENEL
         function showPage(p) {
             document.querySelectorAll('.page-content').forEach(s => s.classList.remove('active-section'));
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('sidebar-active'));
