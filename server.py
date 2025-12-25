@@ -23,6 +23,7 @@ HTML_PANEL = r"""
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ÖZCAN OTO | Kurumsal Yönetim</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -89,6 +90,24 @@ HTML_PANEL = r"""
                         <button onclick="hesaplaDepo()" class="mt-4 text-[9px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase">Hesapla</button>
                     </div>
                 </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                    <div class="custom-card p-8 border-l-4 border-green-600 flex justify-between items-center cursor-pointer hover:bg-green-50 transition-all" onclick="exportToExcel()">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Envanter Raporu</p>
+                            <h4 class="text-xl font-bold text-slate-800">Excel Olarak İndir</h4>
+                        </div>
+                        <i class="fas fa-file-excel text-3xl text-green-600"></i>
+                    </div>
+                    <div class="custom-card p-8 border-l-4 border-orange-400 flex justify-between items-center cursor-pointer hover:bg-orange-50 transition-all" onclick="sendGmailReport()">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hızlı Paylaşım</p>
+                            <h4 class="text-xl font-bold text-slate-800">Gmail İle Gönder</h4>
+                        </div>
+                        <i class="fas fa-envelope text-3xl text-orange-500"></i>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="custom-card p-8 border-l-4 border-slate-900">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kayıtlı Parça Çeşidi</p>
@@ -192,6 +211,23 @@ HTML_PANEL = r"""
             if(pageId === 'gider') yukleGider();
         }
 
+        async function exportToExcel() {
+            const res = await fetch('/api/products');
+            const data = await res.json();
+            const ws = XLSX.utils.json_to_sheet(data.map(i => ({ "KOD": i.code, "PARÇA ADI": i.name, "KATEGORİ": i.category, "STOK": i.stock, "FİYAT": i.price })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Stok_Listesi");
+            XLSX.writeFile(wb, "OzcanOto_Stok_Raporu.xlsx");
+        }
+
+        async function sendGmailReport() {
+            const res = await fetch('/api/products');
+            const data = await res.json();
+            let body = "GÜNCEL STOK LİSTESİ:\n\n";
+            data.forEach(i => body += `${i.name} (${i.code}) - Stok: ${i.stock}\n`);
+            window.location.href = `mailto:?subject=Ozcan Oto Stok Raporu&body=${encodeURIComponent(body)}`;
+        }
+
         async function yukleDashboard() {
             const [pRes, gRes, fRes] = await Promise.all([fetch('/api/products'), fetch('/api/expenses'), fetch('/api/invoices')]);
             const prods = await pRes.json(); const exps = await gRes.json(); const invs = await fRes.json();
@@ -207,7 +243,6 @@ HTML_PANEL = r"""
             document.getElementById('dash-gider').innerText = `₺${gG.toLocaleString('tr-TR')}`;
             document.getElementById('dash-count').innerText = prods.length;
             document.getElementById('dash-crit').innerText = prods.filter(x => x.stock <= 2).length;
-            document.getElementById('dash-depo').innerText = "****";
         }
 
         async function hesaplaDepo() {
@@ -316,7 +351,10 @@ def handle_delete(col, id):
 @app.route('/api/products/<id>/update', methods=['POST'])
 def update_stock(id):
     degisim = request.json.get('degisim', 0)
-    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": int(degisim)}})
+    # HATA ÖNLEME: Önce mevcut stok verisini sayıya çevir
+    target = db.products.find_one({"_id": ObjectId(id)})
+    current_stock = int(target.get('stock', 0))
+    db.products.update_one({"_id": ObjectId(id)}, {"$set": {"stock": current_stock + int(degisim)}})
     return jsonify({"ok": True})
 
 @app.route('/api/fatura-kes', methods=['POST'])
@@ -327,7 +365,11 @@ def fatura_kes():
         adet = int(data.get('adet', 0))
         parca = db.products.find_one({"_id": ObjectId(parca_id)})
         if not parca: return jsonify({"ok": False, "error": "Parca bulunamadı"}), 404
-        db.products.update_one({"_id": ObjectId(parca_id)}, {"$inc": {"stock": -adet}})
+        
+        # HATA ÖNLEME: String olan stock değerini sayıya çevirerek güncelle
+        current_stock = int(parca.get('stock', 0))
+        db.products.update_one({"_id": ObjectId(parca_id)}, {"$set": {"stock": current_stock - adet}})
+        
         db.invoices.insert_one({"ad": data['ad'], "tel": data['tel'], "parca_id": parca_id, "parca_ad": parca['name'], "adet": adet, "tarih": data['tarih']})
         return jsonify({"ok": True})
     except Exception as e:
