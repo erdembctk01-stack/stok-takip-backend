@@ -9,7 +9,6 @@ import satis_yonetimi
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
-# MongoDB Bağlantısı
 MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
@@ -49,16 +48,20 @@ def handle_delete(col, id):
 @app.route('/api/dashboard-stats', methods=['GET'])
 def get_stats():
     invoices = list(db.invoices.find())
+    expenses = list(db.expenses.find())
     products = list(db.products.find())
     
     def temizle(val):
-        return float(str(val).replace('₺', '').replace('.', '').replace(',', '.')) if val else 0.0
+        try: return float(str(val).replace('₺', '').replace('.', '').replace(',', '.'))
+        except: return 0.0
 
     toplam_kazanc = sum(temizle(i.get('toplam', 0)) for i in invoices)
+    toplam_gider = sum(temizle(e.get('tutar', 0)) for e in expenses)
     depo_degeri = sum(int(p.get('stock', 0)) * temizle(p.get('price', 0)) for p in products)
     
     return jsonify({
         "kazanc": f"₺{toplam_kazanc:,.2f}",
+        "gider": f"₺{toplam_gider:,.2f}",
         "depo": f"₺{depo_degeri:,.2f}"
     })
 
