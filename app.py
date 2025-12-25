@@ -2,38 +2,76 @@ import os
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from pymongo import MongoClient
+from bson.objectid import ObjectId
+
+# Kendi yazdığımız modülleri içe aktarıyoruz
 import stok_yonetimi 
 import satis_yonetimi
 
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
-# MongoDB Bağlantısı
+# --- MONGODB BAĞLANTISI ---
 MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
 
+# --- ANA SAYFA ---
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# --- GENEL API (LİSTELEME VE EKLEME) ---
 @app.route('/api/<col>', methods=['GET', 'POST'])
 def handle_generic_api(col):
     if request.method == 'GET':
         items = list(db[col].find())
-        for i in items: i['_id'] = str(i['_id'])
+        for i in items:
+            i['_id'] = str(i['_id'])
         return jsonify(items)
-    db[col].insert_one(request.json)
+    
+    # POST isteği (Yeni veri ekleme)
+    data = request.json
+    if col == 'products':
+        return jsonify(stok_yonetimi.parca_ekle(db, data))
+    
+    db[col].insert_one(data)
     return jsonify({"ok": True})
 
-@app.route('/api/<col>/<id>', methods=['DELETE'])
-def handle_delete(col, id):
-    return jsonify(stok_yonetimi.genel_sil(db, col, id))
+# --- STOK MİKTARI GÜNCELLEME (+ / - BUTONLARI İÇİN) ---
+@app.route('/api/products/update/<id>', methods=['POST'])
+def update_stock(id):
+    miktar = request.json.get('miktar', 0)
+    return jsonify(stok_yonetimi.stok_guncelle(db, id, miktar))
 
+# --- FATURA KESME VE CARİ KAYIT ---
 @app.route('/api/fatura-kes', methods=['POST'])
 def post_fatura():
     return jsonify(satis_yonetimi.fatura_kes(db, request.json))
 
+# --- GENEL SİLME İŞLEMİ ---
+@app.route('/api/<col>/<id>', methods=['DELETE'])
+def handle_delete(col, id):
+    db[col].delete_one({"_id": ObjectId(id)})
+    return jsonify({"ok": True})
+
+# --- DASHBOARD HESAPLAMALARI ---
+@app.route('/api/dashboard-stats', methods=['GET'])
+def get_stats():
+    # Toplam Kazanç (Invoices üzerinden)
+    invoices = list(db.invoices.find())
+    toplam_kazanc = sum(float(str(i.get('toplam', 0)).replace(',', '.')) for i in invoices)
+    
+    # Depo Değeri (Products üzerinden)
+    products = list(db.products.find())
+    depo_degeri = sum(int(p.get('stock', 0)) * float(str(p.get('price', 0)).replace(',', '.')) for p in products)
+    
+    return jsonify({
+        "kazanc": f"{toplam_kazanc:,.2f} ₺",
+        "depo": f"{depo_degeri:,.2f} ₺"
+    })
+
+# --- RENDER PORT AYARI ---
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
