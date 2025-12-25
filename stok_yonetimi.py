@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 from bson.objectid import ObjectId
-from app import db
 
 stok_bp = Blueprint('stok_bp', __name__)
+
+from app import db
 
 @stok_bp.route('/api/products', methods=['GET', 'POST'])
 def manage_products():
