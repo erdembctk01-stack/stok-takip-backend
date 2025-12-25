@@ -9,6 +9,7 @@ import satis_yonetimi
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
+# MongoDB Bağlantısı
 MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
@@ -44,7 +45,6 @@ def update_stock(id):
 
 @app.route('/api/fatura-kes', methods=['POST'])
 def post_fatura():
-    # Frontend'den gelen fiyat verisi satis_yonetimi içinde değerlendirilir
     return jsonify(satis_yonetimi.fatura_kes(db, request.json))
 
 @app.route('/api/<col>/<id>', methods=['DELETE'])
@@ -59,9 +59,17 @@ def get_stats():
     products = list(db.products.find())
     
     def temizle(val):
-        try: return float(str(val).replace('₺', '').replace('.', '').replace(',', '.'))
-        except: return 0.0
+        if val is None: return 0.0
+        try:
+            # Hem string hem sayı formatını destekler
+            s_val = str(val).replace('₺', '').replace(' ', '').replace('.', '')
+            if ',' in s_val:
+                s_val = s_val.replace(',', '.')
+            return float(s_val)
+        except:
+            return 0.0
 
+    # Giderler kısmından 'tutar' alanını çekerek toplar
     toplam_kazanc = sum(temizle(i.get('toplam', 0)) for i in invoices)
     toplam_gider = sum(temizle(e.get('tutar', 0)) for e in expenses)
     depo_degeri = sum(int(p.get('stock', 0)) * temizle(p.get('price', 0)) for p in products)
