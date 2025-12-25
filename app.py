@@ -5,7 +5,11 @@ from pymongo import MongoClient
 import stok_yonetimi 
 import satis_yonetimi
 
-app = Flask(__name__)
+# Flask'ın templates klasörünü kesin olarak bulmasını sağlıyoruz
+base_dir = os.path.abspath(os.path.dirname(__file__))
+template_dir = os.path.join(base_dir, 'templates')
+
+app = Flask(__name__, template_folder=template_dir)
 CORS(app)
 
 # MongoDB Bağlantısı
@@ -15,8 +19,11 @@ db = client.stok_veritabani
 
 @app.route('/')
 def index():
-    # Burası beyaz ekranı önleyen kısımdır. templates/index.html'i çağırır.
-    return render_template('index.html')
+    # Sayfayı gönderirken oluşabilecek hataları yakalıyoruz
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return f"Dosya Bulunamadı Hatası: {str(e)}. Lütfen 'templates' klasörünü kontrol edin."
 
 @app.route('/api/products', methods=['GET'])
 def get_stok():
