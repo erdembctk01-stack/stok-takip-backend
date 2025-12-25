@@ -7,9 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; margin: 0; }
-        /* GİRİŞ EKRANI STİLLERİ */
         #login-screen { position: fixed; inset: 0; background: #0f172a; z-index: 10000; display: flex; align-items: center; justify-content: center; }
-        .sidebar { background: #0f172a; width: 280px; min-height: 100vh; color: white; flex-shrink: 0; }
+        .sidebar { background: #0f172a; width: 280px; min-height: 100vh; color: white; flex-shrink: 0; display: flex; flex-direction: column; }
         .page-content { display: none; padding: 40px; width: 100%; height: 100vh; overflow-y: auto; }
         .active-section { display: block; }
         .sidebar-link { padding: 14px 20px; cursor: pointer; color: #94a3b8; border-radius: 10px; margin: 4px 15px; display: block; transition: 0.3s; }
@@ -17,8 +16,11 @@
         .sidebar-active { background: #f97316 !important; color: white !important; font-weight: bold; }
         .critical { background: #fee2e2 !important; color: #dc2626 !important; }
         .btn-action { padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
-        /* ANA PANEL GİZLEME */
         #main-layout { display: none; width: 100%; }
+        
+        /* HATIRLANAN HESAP GÖRÜNÜMÜ */
+        #remembered-account { display: none; cursor: pointer; border: 2px solid #e2e8f0; padding: 15px; border-radius: 20px; transition: 0.3s; }
+        #remembered-account:hover { border-color: #f97316; background: #fff7ed; }
     </style>
 </head>
 <body>
@@ -27,10 +29,26 @@
         <div class="bg-white p-10 rounded-3xl shadow-2xl w-96 text-center">
             <h1 class="text-3xl font-black italic mb-2 text-slate-900">ÖZCAN OTO</h1>
             <p class="text-xs font-bold text-orange-500 uppercase mb-8 tracking-widest">Yönetim Paneli</p>
-            <div class="space-y-4">
+            
+            <div id="remembered-account" onclick="checkLogin(true)" class="mb-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold text-xl">Ö</div>
+                    <div class="text-left">
+                        <p class="text-sm font-black text-slate-900">ozcanoto</p>
+                        <p class="text-[10px] text-slate-400">Kayıtlı Oturum</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="login-form" class="space-y-4">
                 <input id="user-in" type="text" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500 transition">
                 <input id="pass-in" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500 transition">
-                <button onclick="checkLogin()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl hover:bg-orange-600 transition">GİRİŞ YAP</button>
+                <div class="flex items-center gap-2 px-2 text-left">
+                    <input type="checkbox" id="remember-me" class="w-4 h-4 accent-orange-500">
+                    <label for="remember-me" class="text-xs font-bold text-slate-500 cursor-pointer">10 Gün Beni Hatırla</label>
+                </div>
+                <button onclick="checkLogin(false)" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl hover:bg-orange-600 transition">GİRİŞ YAP</button>
+                <button id="use-another" onclick="showNormalLogin()" class="hidden text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-4 underline">Farklı Hesap Kullan</button>
             </div>
             <p id="error-msg" class="text-red-500 text-xs mt-4 font-bold hidden italic">Hatalı kullanıcı adı veya şifre!</p>
         </div>
@@ -39,20 +57,25 @@
     <div id="main-layout">
         <aside class="sidebar">
             <div class="p-8 border-b border-slate-800 text-center">
-                <h1 class="text-2xl font-black italic tracking-tighter">ÖZCAN OTO</h1>
+                <h1 class="text-2xl font-black italic tracking-tighter text-white">ÖZCAN OTO</h1>
                 <p class="text-[9px] text-orange-500 font-bold uppercase tracking-widest">Servis & Yedek Parça</p>
                 <div class="mt-3 inline-flex items-center bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
                     <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse mr-2"></span>
                     <span class="text-[10px] text-emerald-500 font-black uppercase">Sistem Aktif</span>
                 </div>
             </div>
-            <nav class="mt-6">
+            <nav class="mt-6 flex-1">
                 <div onclick="showPage('dashboard')" id="btn-dashboard" class="sidebar-link sidebar-active"><i class="fas fa-home mr-3"></i> Dashboard</div>
                 <div onclick="showPage('stok')" id="btn-stok" class="sidebar-link"><i class="fas fa-boxes mr-3"></i> Parça Yönetimi</div>
                 <div onclick="showPage('fatura')" id="btn-fatura" class="sidebar-link"><i class="fas fa-file-invoice mr-3"></i> Satış / Faturalar</div>
                 <div onclick="showPage('gider')" id="btn-gider" class="sidebar-link"><i class="fas fa-wallet mr-3"></i> Giderler</div>
                 <div onclick="showPage('cari')" id="btn-cari" class="sidebar-link"><i class="fas fa-users mr-3"></i> Cari Rehber</div>
             </nav>
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="logout()" class="w-full flex items-center justify-center p-4 text-xs font-black uppercase bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition group">
+                    <i class="fas fa-sign-out-alt mr-2 group-hover:rotate-180 transition duration-500"></i> Hesaptan Çıkış Yap
+                </button>
+            </div>
         </aside>
 
         <main class="flex-1">
@@ -149,11 +172,34 @@
     </div>
 
     <script>
-        // GİRİŞ KONTROLÜ
-        function checkLogin() {
-            const user = document.getElementById('user-in').value;
-            const pass = document.getElementById('pass-in').value;
+        // GİRİŞ VE HATIRLAMA MANTIĞI
+        window.onload = () => {
+            const savedExpiry = localStorage.getItem('oto_expiry');
+            if (savedExpiry && new Date().getTime() < savedExpiry) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('remembered-account').style.display = 'block';
+                document.getElementById('use-another').classList.remove('hidden');
+            } else {
+                localStorage.removeItem('oto_expiry');
+            }
+        };
+
+        function showNormalLogin() {
+            document.getElementById('remembered-account').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('use-another').classList.add('hidden');
+        }
+
+        function checkLogin(isRemembered) {
+            const user = isRemembered ? 'ozcanoto' : document.getElementById('user-in').value;
+            const pass = isRemembered ? 'eren9013' : document.getElementById('pass-in').value;
+            const remember = document.getElementById('remember-me').checked;
+
             if(user === 'ozcanoto' && pass === 'eren9013') {
+                if(remember) {
+                    const tenDays = new Date().getTime() + (10 * 24 * 60 * 60 * 1000);
+                    localStorage.setItem('oto_expiry', tenDays);
+                }
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-layout').style.display = 'flex';
                 showPage('dashboard');
@@ -162,7 +208,14 @@
             }
         }
 
-        // SIFIRLAMA FONKSİYONU
+        function logout() {
+            if(confirm('Çıkış yapmak istiyor musunuz?')) {
+                localStorage.removeItem('oto_expiry');
+                window.location.reload();
+            }
+        }
+
+        // --- MEVCUT SİSTEM FONKSİYONLARI (DEĞİŞTİRİLMEDİ) ---
         async function sifirlaFinans() {
             if(confirm('DİKKAT! Tüm satış (kazanç) ve gider kayıtları kalıcı olarak silinecektir. Bu işlem geri alınamaz. Onaylıyor musunuz?')) {
                 const res = await fetch('/api/reset-finance', { method: 'POST' });
