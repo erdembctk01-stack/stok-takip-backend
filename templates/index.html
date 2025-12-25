@@ -50,6 +50,8 @@
         </div>
     </div>
 
+    <input type="file" id="import-file" class="hidden" onchange="processImport(this)">
+
     <div id="main-layout">
         <aside class="sidebar">
             <div class="p-8 border-b border-slate-800 text-center">
@@ -103,8 +105,8 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-black italic uppercase">Parça Yönetimi</h2>
                     <div class="flex gap-2">
-                        <button onclick="exportExcel('products')" class="bg-green-600 text-white btn-action">Excel</button>
-                        <button onclick="sendGmail('products')" class="bg-orange-600 text-white btn-action">Gmail</button>
+                        <button onclick="exportExcel('products')" class="bg-green-600 text-white btn-action">Excel Al</button>
+                        <button onclick="triggerImport('products')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
                     </div>
                 </div>
                 <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -135,8 +137,8 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-black italic uppercase">Satış Kaydı</h2>
                     <div class="flex gap-2">
-                        <button onclick="exportExcel('invoices')" class="bg-green-600 text-white btn-action">Excel</button>
-                        <button onclick="sendGmail('invoices')" class="bg-orange-600 text-white btn-action">Gmail</button>
+                        <button onclick="exportExcel('invoices')" class="bg-green-600 text-white btn-action">Excel Al</button>
+                        <button onclick="triggerImport('invoices')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -160,8 +162,8 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-black italic uppercase">Veresiye Kayıtları</h2>
                     <div class="flex gap-2">
-                        <button onclick="exportExcel('veresiye')" class="bg-green-600 text-white btn-action">Excel</button>
-                        <button onclick="sendGmail('veresiye')" class="bg-orange-600 text-white btn-action">Gmail</button>
+                        <button onclick="exportExcel('veresiye')" class="bg-green-600 text-white btn-action">Excel Al</button>
+                        <button onclick="triggerImport('veresiye')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
                     </div>
                 </div>
                 <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -192,7 +194,12 @@
             </div>
 
             <div id="page-cari" class="page-content">
-                <h2 class="text-2xl font-black italic uppercase mb-8">Cari Rehber</h2>
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-black italic uppercase">Cari Rehber</h2>
+                    <div class="flex gap-2">
+                        <button onclick="triggerImport('customers')" class="bg-blue-600 text-white btn-action">Rehber Geri Yükle</button>
+                    </div>
+                </div>
                 <div id="cari-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
         </main>
@@ -200,6 +207,7 @@
 
     <script>
         let allProducts = [];
+        let activeImportType = '';
 
         window.onload = () => {
             const savedExpiry = localStorage.getItem('oto_expiry');
@@ -253,9 +261,10 @@
             const bugun = new Date().toLocaleString('tr-TR');
             let output = `ÖZCAN OTO - ${api.toUpperCase()} - ${bugun}\n----------------------------------\n`;
             data.forEach((item, index) => {
-                if(api === 'products') output += `${index+1}. ${item.name} | Kod: ${item.code} | Stok: ${item.stock}\n`;
-                else if(api === 'invoices') output += `${index+1}. Müşteri: ${item.ad} | Tutar: ${item.toplam}₺ | Tarih: ${item.tarih}\n`;
-                else if(api === 'veresiye') output += `${index+1}. Müşteri: ${item.ad} | Tel: ${item.tel} | İşlem: ${item.islem} | Tutar: ${item.para}₺\n`;
+                if(api === 'products') output += `${item.name}|${item.code}|${item.category}|${item.price}|${item.stock}\n`;
+                else if(api === 'invoices') output += `${item.ad}|${item.tel}|${item.parca_ad}|${item.adet}|${item.toplam}|${item.tarih}\n`;
+                else if(api === 'veresiye') output += `${item.ad}|${item.tel}|${item.islem}|${item.para}\n`;
+                else if(api === 'customers') output += `${item.ad}|${item.tel}\n`;
             });
             return output;
         }
@@ -270,9 +279,51 @@
             a.click();
         }
 
-        async function sendGmail(api) {
-            const body = await getFormattedData(api);
-            window.location.href = `mailto:?subject=Ozcan Oto Yedek ${api}&body=${encodeURIComponent(body)}`;
+        // --- GERİ YÜKLEME (IMPORT) FONKSİYONLARI ---
+        function triggerImport(api) {
+            activeImportType = api;
+            document.getElementById('import-file').click();
+        }
+
+        async function processImport(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const content = e.target.result;
+                const lines = content.split('\n').slice(2); // Başlıkları atla
+                let count = 0;
+
+                for (let line of lines) {
+                    if (!line.trim()) continue;
+                    const parts = line.split('|');
+                    let data = {};
+
+                    try {
+                        if (activeImportType === 'products') {
+                            data = { name: parts[0], code: parts[1], category: parts[2], price: parts[3], stock: parts[4] };
+                        } else if (activeImportType === 'invoices') {
+                            data = { ad: parts[0], tel: parts[1], parca_ad: parts[2], adet: parts[3], toplam: parts[4], tarih: parts[5] };
+                        } else if (activeImportType === 'veresiye') {
+                            data = { ad: parts[0], tel: parts[1], islem: parts[2], para: parts[3] };
+                        } else if (activeImportType === 'customers') {
+                            data = { ad: parts[0], tel: parts[1] };
+                        }
+
+                        await fetch(`/api/${activeImportType}`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(data)
+                        });
+                        count++;
+                    } catch (err) { console.error("Satır işlenemedi:", line); }
+                }
+                alert(`${count} adet kayıt başarıyla geri yüklendi!`);
+                input.value = ''; // Reset file input
+                showPage(activeImportType === 'customers' ? 'cari' : (activeImportType === 'products' ? 'stok' : activeImportType));
+            };
+            reader.readAsText(file);
         }
 
         async function yukleStok() {
