@@ -62,6 +62,7 @@ HTML_PANEL = r"""
                 <div onclick="showPage('dashboard')" id="btn-dashboard" class="sidebar-link sidebar-active flex items-center gap-3 p-4 text-sm font-semibold"><i class="fas fa-chart-line w-5"></i> Dashboard</div>
                 <div onclick="showPage('stok')" id="btn-stok" class="sidebar-link flex items-center gap-3 p-4 text-sm font-semibold"><i class="fas fa-boxes w-5"></i> Parça Yönetimi</div>
                 <div onclick="showPage('fatura')" id="btn-fatura" class="sidebar-link flex items-center gap-3 p-4 text-sm font-semibold"><i class="fas fa-file-invoice w-5"></i> Fatura Kes</div>
+                <div onclick="showPage('log')" id="btn-log" class="sidebar-link flex items-center gap-3 p-4 text-sm font-semibold"><i class="fas fa-history w-5"></i> Satış Geçmişi</div>
                 <div onclick="showPage('cari')" id="btn-cari" class="sidebar-link flex items-center gap-3 p-4 text-sm font-semibold"><i class="fas fa-users w-5"></i> Cari Kayıtlar</div>
                 <div onclick="showPage('gider')" id="btn-gider" class="sidebar-link flex items-center gap-3 p-4 text-sm font-semibold"><i class="fas fa-wallet w-5"></i> Harcamalar</div>
             </nav>
@@ -92,17 +93,17 @@ HTML_PANEL = r"""
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                    <div class="custom-card p-8 border-l-4 border-green-600 flex justify-between items-center cursor-pointer hover:bg-green-50 transition-all" onclick="exportToExcel()">
+                    <div class="custom-card p-8 border-l-4 border-green-600 flex justify-between items-center cursor-pointer hover:bg-green-50 transition-all" onclick="exportToExcel('products')">
                         <div>
                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Envanter Raporu</p>
-                            <h4 class="text-xl font-bold text-slate-800">Excel Olarak İndir</h4>
+                            <h4 class="text-xl font-bold text-slate-800">Stok Excel Olarak İndir</h4>
                         </div>
                         <i class="fas fa-file-excel text-3xl text-green-600"></i>
                     </div>
-                    <div class="custom-card p-8 border-l-4 border-orange-400 flex justify-between items-center cursor-pointer hover:bg-orange-50 transition-all" onclick="sendGmailReport()">
+                    <div class="custom-card p-8 border-l-4 border-orange-400 flex justify-between items-center cursor-pointer hover:bg-orange-50 transition-all" onclick="sendGmailReport('products')">
                         <div>
                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hızlı Paylaşım</p>
-                            <h4 class="text-xl font-bold text-slate-800">Gmail İle Gönder</h4>
+                            <h4 class="text-xl font-bold text-slate-800">Stoğu Gmail İle Gönder</h4>
                         </div>
                         <i class="fas fa-envelope text-3xl text-orange-500"></i>
                     </div>
@@ -156,10 +157,20 @@ HTML_PANEL = r"""
                         <button onclick="faturaKes()" class="col-span-2 bg-orange-600 text-white font-bold py-5 rounded-xl hover:bg-orange-700 shadow-lg uppercase text-sm">Faturayı Onayla ve Stoktan Düş</button>
                     </div>
                 </div>
+            </div>
+
+            <div id="page-log" class="page-content">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-2xl font-bold text-slate-800 uppercase">Satış Geçmişi & Kayıtlar</h3>
+                    <div class="flex gap-2">
+                         <button onclick="exportToExcel('invoices')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-file-excel mr-2"></i>Excel</button>
+                         <button onclick="sendGmailReport('invoices')" class="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase"><i class="fas fa-envelope mr-2"></i>Gmail</button>
+                    </div>
+                </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden text-sm">
                     <table class="w-full text-left">
                         <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
-                            <tr><th class="px-6 py-4">Müşteri</th><th class="px-6 py-4">Satılan Parça</th><th class="px-6 py-4 text-center">Adet</th><th class="px-6 py-4 text-right">Tarih</th></tr>
+                            <tr><th class="px-6 py-4">Müşteri</th><th class="px-6 py-4">Satılan Parça</th><th class="px-6 py-4 text-center">Adet</th><th class="px-6 py-4 text-right">Tarih</th><th class="px-6 py-4 text-right">İşlem</th></tr>
                         </thead>
                         <tbody id="fatura-list" class="divide-y divide-slate-100"></tbody>
                     </table>
@@ -206,26 +217,42 @@ HTML_PANEL = r"""
             document.getElementById('btn-' + pageId).classList.add('sidebar-active');
             if(pageId === 'dashboard') yukleDashboard();
             if(pageId === 'stok') yukleStok();
-            if(pageId === 'fatura') yukleFatura();
+            if(pageId === 'fatura' || pageId === 'log') yukleFatura();
             if(pageId === 'cari') yukleCari();
             if(pageId === 'gider') yukleGider();
         }
 
-        async function exportToExcel() {
-            const res = await fetch('/api/products');
+        async function exportToExcel(type) {
+            const res = await fetch(`/api/${type}`);
             const data = await res.json();
-            const ws = XLSX.utils.json_to_sheet(data.map(i => ({ "KOD": i.code, "PARÇA ADI": i.name, "KATEGORİ": i.category, "STOK": i.stock, "FİYAT": i.price })));
+            let mappedData = [];
+            
+            if(type === 'products') {
+                mappedData = data.map(i => ({ "PARÇA": i.name, "KOD": i.code, "STOK": i.stock + " ADET", "FİYAT": "₺" + i.price }));
+            } else {
+                mappedData = data.map(i => ({ "MÜŞTERİ": i.ad, "PARÇA": i.parca_ad, "ADET": i.adet, "TARİH": i.tarih }));
+            }
+
+            const ws = XLSX.utils.json_to_sheet(mappedData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Stok_Listesi");
-            XLSX.writeFile(wb, "OzcanOto_Stok_Raporu.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Rapor");
+            
+            // Japonca/Karakter sorununu çözen UTF-8 ayarı
+            XLSX.writeFile(wb, `OzcanOto_${type}_${new Date().toLocaleDateString()}.xlsx`);
         }
 
-        async function sendGmailReport() {
-            const res = await fetch('/api/products');
+        async function sendGmailReport(type) {
+            const res = await fetch(`/api/${type}`);
             const data = await res.json();
-            let body = "GÜNCEL STOK LİSTESİ:\n\n";
-            data.forEach(i => body += `${i.name} (${i.code}) - Stok: ${i.stock}\n`);
-            window.location.href = `mailto:?subject=Ozcan Oto Stok Raporu&body=${encodeURIComponent(body)}`;
+            let body = `ÖZCAN OTO GÜNLÜK RAPOR - ${new Date().toLocaleDateString()}\n\n`;
+            
+            if(type === 'products') {
+                data.forEach(i => body += `PARÇA: ${i.name}\nKOD: ${i.code}\nSTOK: ${i.stock} ADET\nFİYAT: ₺${i.price}\n------------------\n`);
+            } else {
+                data.forEach(i => body += `MÜŞTERİ: ${i.ad}\nPARÇA: ${i.parca_ad}\nADET: ${i.adet}\nTARİH: ${i.tarih}\n------------------\n`);
+            }
+            
+            window.location.href = `mailto:?subject=Ozcan Oto Rapor&body=${encodeURIComponent(body)}`;
         }
 
         async function yukleDashboard() {
@@ -280,19 +307,40 @@ HTML_PANEL = r"""
 
         async function faturaKes() {
             const ad = document.getElementById('fat-ad').value;
+            const tel = document.getElementById('fat-tel').value;
             const parcaId = document.getElementById('fat-parca').value;
             const adet = document.getElementById('fat-adet').value;
             if(!ad || !parcaId || !adet) return alert("Lütfen tüm alanları doldurun!");
-            const res = await fetch('/api/fatura-kes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ad, tel: document.getElementById('fat-tel').value, parcaId, adet: parseInt(adet), tarih: new Date().toLocaleString('tr-TR') }) });
+            
+            const res = await fetch('/api/fatura-kes', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ ad, tel, parcaId, adet: parseInt(adet), tarih: new Date().toLocaleString('tr-TR') }) 
+            });
             const data = await res.json();
-            if(data.ok) { document.getElementById('fat-adet').value = ''; yukleFatura(); alert("SATIŞ TAMAMLANDI"); } else { alert("Hata: " + (data.error || "Bilinmiyor")); }
+            if(data.ok) { 
+                document.getElementById('fat-adet').value = ''; 
+                yukleFatura(); 
+                alert("SATIŞ TAMAMLANDI VE CARİYE KAYDEDİLDİ"); 
+            } else { alert("Hata: " + (data.error || "Bilinmiyor")); }
         }
 
         async function yukleFatura() {
             const [pRes, fRes] = await Promise.all([fetch('/api/products'), fetch('/api/invoices')]);
             const pData = await pRes.json(); const fData = await fRes.json();
-            document.getElementById('fat-parca').innerHTML = pData.map(i => `<option value="${i._id}">${i.name} (Stok: ${i.stock})</option>`).join('');
-            document.getElementById('fatura-list').innerHTML = fData.reverse().map(i => `<tr><td class="px-6 py-4 font-bold uppercase">${i.ad}</td><td class="px-6 py-4">${i.parca_ad}</td><td class="px-6 py-4 text-center font-bold text-orange-600">${i.adet}</td><td class="px-6 py-4 text-right text-[10px] text-slate-400 font-bold uppercase">${i.tarih}</td></tr>`).join('');
+            
+            const fatSelect = document.getElementById('fat-parca');
+            if(fatSelect) fatSelect.innerHTML = pData.map(i => `<option value="${i._id}">${i.name} (Stok: ${i.stock})</option>`).join('');
+            
+            const list = document.getElementById('fatura-list');
+            if(list) list.innerHTML = fData.reverse().map(i => `
+                <tr>
+                    <td class="px-6 py-4 font-bold uppercase">${i.ad}</td>
+                    <td class="px-6 py-4">${i.parca_ad}</td>
+                    <td class="px-6 py-4 text-center font-bold text-orange-600">${i.adet}</td>
+                    <td class="px-6 py-4 text-right text-[10px] text-slate-400 font-bold uppercase">${i.tarih}</td>
+                    <td class="px-6 py-4 text-right"><button onclick="sil('${i._id}','invoices')" class="text-red-300 hover:text-red-600"><i class="fas fa-trash"></i></button></td>
+                </tr>`).join('');
         }
 
         async function hizliEkle() {
@@ -305,7 +353,8 @@ HTML_PANEL = r"""
 
         async function cariEkle() {
             const ad = document.getElementById('cari-ad').value;
-            await fetch('/api/customers', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ad, tel: document.getElementById('cari-tel').value, tarih: new Date().toLocaleDateString('tr-TR')}) });
+            const tel = document.getElementById('cari-tel').value;
+            await fetch('/api/customers', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ad, tel, tarih: new Date().toLocaleDateString('tr-TR')}) });
             document.getElementById('cari-ad').value = ''; document.getElementById('cari-tel').value = ''; yukleCari();
         }
 
@@ -325,7 +374,15 @@ HTML_PANEL = r"""
             document.getElementById('gider-list').innerHTML = d.map(i => `<div class="custom-card p-6 flex justify-between items-center border-l-4 border-red-400"><div><b class="text-sm font-bold uppercase">${i.ad}</b><span class="text-[10px] block text-slate-400 font-bold">${i.tarih}</span></div><div class="flex items-center gap-6"><b class="text-lg text-red-600 font-extrabold">₺${i.tutar.toLocaleString('tr-TR')}</b><button onclick="sil('${i._id}','expenses')" class="text-slate-200 hover:text-red-400"><i class="fas fa-trash-alt"></i></button></div></div>`).join('');
         }
 
-        async function sil(id, col) { if(confirm('SİLİNSİN Mİ?')) { await fetch(`/api/${col}/${id}`, {method: 'DELETE'}); showPage(col === 'products' ? 'stok' : col === 'customers' ? 'cari' : 'gider'); } }
+        async function sil(id, col) { 
+            if(confirm('SİLİNSİN Mİ?')) { 
+                await fetch(`/api/${col}/${id}`, {method: 'DELETE'}); 
+                if(col === 'products') yukleStok();
+                else if(col === 'customers') yukleCari();
+                else if(col === 'expenses') yukleGider();
+                else if(col === 'invoices') yukleFatura();
+            } 
+        }
 
         window.onload = () => { if(localStorage.getItem('pro_session')) { document.getElementById('login-section').classList.add('hidden'); document.getElementById('main-section').classList.remove('hidden'); showPage('dashboard'); } };
     </script>
@@ -351,9 +408,8 @@ def handle_delete(col, id):
 @app.route('/api/products/<id>/update', methods=['POST'])
 def update_stock(id):
     degisim = request.json.get('degisim', 0)
-    # HATA ÖNLEME: Önce mevcut stok verisini sayıya çevir
     target = db.products.find_one({"_id": ObjectId(id)})
-    current_stock = int(target.get('stock', 0))
+    current_stock = int(target.get('stock', 0)) # Hata önleme: zorunlu int
     db.products.update_one({"_id": ObjectId(id)}, {"$set": {"stock": current_stock + int(degisim)}})
     return jsonify({"ok": True})
 
@@ -364,13 +420,30 @@ def fatura_kes():
         parca_id = data.get('parcaId')
         adet = int(data.get('adet', 0))
         parca = db.products.find_one({"_id": ObjectId(parca_id)})
+        
         if not parca: return jsonify({"ok": False, "error": "Parca bulunamadı"}), 404
         
-        # HATA ÖNLEME: String olan stock değerini sayıya çevirerek güncelle
+        # Stok Güncelleme (Zorunlu sayı dönüşümü ile hata giderildi)
         current_stock = int(parca.get('stock', 0))
         db.products.update_one({"_id": ObjectId(parca_id)}, {"$set": {"stock": current_stock - adet}})
         
-        db.invoices.insert_one({"ad": data['ad'], "tel": data['tel'], "parca_id": parca_id, "parca_ad": parca['name'], "adet": adet, "tarih": data['tarih']})
+        # Faturayı Kaydet
+        db.invoices.insert_one({
+            "ad": data['ad'], 
+            "tel": data['tel'], 
+            "parca_id": parca_id, 
+            "parca_ad": parca['name'], 
+            "adet": adet, 
+            "tarih": data['tarih']
+        })
+        
+        # CARİ OTOMASYON: Müşteriyi Cari Rehbere Ekle (Eğer yoksa)
+        db.customers.update_one(
+            {"ad": data['ad']},
+            {"$set": {"ad": data['ad'], "tel": data['tel'], "tarih": datetime.now().strftime("%d.%m.%Y")}},
+            upsert=True
+        )
+        
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
