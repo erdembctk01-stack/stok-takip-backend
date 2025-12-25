@@ -108,33 +108,12 @@ HTML_PANEL = r"""
                         <i class="fas fa-envelope text-3xl text-orange-500"></i>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="custom-card p-8 border-l-4 border-slate-900">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kayıtlı Parça Çeşidi</p>
-                        <h4 id="dash-count" class="text-4xl font-extrabold text-slate-800 mt-2">0</h4>
-                    </div>
-                    <div class="custom-card p-8 border-l-4 border-red-500">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kritik Stok Uyarıları</p>
-                        <h4 id="dash-crit" class="text-4xl font-extrabold text-red-600 mt-2">0</h4>
-                    </div>
-                </div>
             </div>
 
             <div id="page-stok" class="page-content">
                 <div class="flex justify-between items-center mb-8">
                     <h3 class="text-2xl font-bold text-slate-800 uppercase">Envanter Listesi</h3>
                     <input id="search" oninput="yukleStok()" type="text" placeholder="Parça veya kod ara..." class="p-3 bg-white border border-slate-200 rounded-xl w-80 text-sm font-medium shadow-sm outline-none">
-                </div>
-                <div class="custom-card p-8 mb-8">
-                    <div class="grid grid-cols-5 gap-4">
-                        <input id="in-code" type="text" placeholder="Kod" class="p-4 bg-slate-50 rounded-lg text-sm font-semibold border-none">
-                        <input id="in-name" type="text" placeholder="Parça Adı" class="p-4 bg-slate-50 rounded-lg text-sm font-semibold border-none">
-                        <input id="in-cat" type="text" placeholder="Kategori" class="p-4 bg-slate-50 rounded-lg text-sm font-semibold border-none">
-                        <input id="in-price" type="number" placeholder="Birim Fiyat" class="p-4 bg-slate-50 rounded-lg text-sm font-semibold border-none">
-                        <input id="in-stock" type="number" placeholder="Adet" class="p-4 bg-slate-50 rounded-lg text-sm font-semibold border-none">
-                        <button onclick="hizliEkle()" class="col-span-5 bg-slate-900 text-white font-bold py-4 rounded-lg hover:bg-black transition-all text-sm uppercase tracking-widest">Yeni Parça Kaydet</button>
-                    </div>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden text-sm">
                     <table class="w-full text-left">
@@ -179,21 +158,11 @@ HTML_PANEL = r"""
 
             <div id="page-cari" class="page-content">
                 <h3 class="text-2xl font-bold text-slate-800 mb-8 uppercase">Cari Rehber</h3>
-                <div class="custom-card p-8 mb-8 flex gap-4">
-                    <input id="cari-ad" type="text" placeholder="Müşteri/Firma Adı" class="flex-1 p-4 bg-slate-50 rounded-xl font-semibold border-none">
-                    <input id="cari-tel" type="text" placeholder="Telefon" class="flex-1 p-4 bg-slate-50 rounded-xl font-semibold border-none">
-                    <button onclick="cariEkle()" class="px-10 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-all uppercase text-xs">Yeni Cari Ekle</button>
-                </div>
                 <div id="cari-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
 
             <div id="page-gider" class="page-content">
                 <h3 class="text-2xl font-bold text-slate-800 mb-8 uppercase text-red-700">Gider Yönetimi</h3>
-                <div class="custom-card p-8 mb-8 flex gap-4 border-l-4 border-red-500">
-                    <input id="gid-ad" type="text" placeholder="Harcama Türü" class="flex-1 p-4 bg-slate-50 rounded-xl font-semibold border-none">
-                    <input id="gid-tutar" type="number" placeholder="Tutar (₺)" class="w-64 p-4 bg-slate-50 rounded-xl font-semibold border-none">
-                    <button onclick="giderEkle()" class="px-10 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all uppercase text-xs">Kaydet</button>
-                </div>
                 <div id="gider-list" class="space-y-4"></div>
             </div>
         </main>
@@ -208,56 +177,50 @@ HTML_PANEL = r"""
                 showPage('dashboard');
             } else alert("Hatalı Giriş!");
         }
-        function handleLogout() { localStorage.clear(); location.reload(); }
-
-        function showPage(pageId) {
-            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active-section'));
-            document.querySelectorAll('.sidebar-link').forEach(b => b.classList.remove('sidebar-active'));
-            document.getElementById('page-' + pageId).classList.add('active-section');
-            document.getElementById('btn-' + pageId).classList.add('sidebar-active');
-            if(pageId === 'dashboard') yukleDashboard();
-            if(pageId === 'stok') yukleStok();
-            if(pageId === 'fatura' || pageId === 'log') yukleFatura();
-            if(pageId === 'cari') yukleCari();
-            if(pageId === 'gider') yukleGider();
-        }
 
         async function exportToExcel(type) {
-            const res = await fetch(`/api/${type}`);
-            const data = await res.json();
-            const bugun = new Date().toLocaleDateString('tr-TR');
-            
-            let reportRows = [];
-            
-            if(type === 'products') {
-                reportRows.push(["ÖZCAN OTO GÜNLÜK RAPOR - " + bugun]);
-                reportRows.push([]); 
-                data.forEach(i => {
-                    reportRows.push(["PARÇA: " + i.name]);
-                    reportRows.push(["KOD: " + i.code]);
-                    reportRows.push(["STOK: " + i.stock + " ADET"]);
-                    reportRows.push(["FİYAT: ₺" + i.price]);
-                    reportRows.push(["------------------"]);
-                });
-                let total = 0; data.forEach(p => total += (Number(p.stock) * Number(p.price)));
-                reportRows.push([]);
-                reportRows.push(["TOPLAM DEPO DEĞERİ: ₺" + total.toLocaleString('tr-TR')]);
-            } else {
-                reportRows.push(["ÖZCAN OTO GÜNLÜK SATIŞ RAPORU - " + bugun]);
-                reportRows.push([]);
-                data.forEach(i => {
-                    reportRows.push(["MÜŞTERİ: " + i.ad]);
-                    reportRows.push(["PARÇA: " + i.parca_ad]);
-                    reportRows.push(["ADET: " + i.adet]);
-                    reportRows.push(["TARİH: " + i.tarih]);
-                    reportRows.push(["------------------"]);
-                });
-            }
+            try {
+                const res = await fetch(`/api/${type}`);
+                const data = await res.json();
+                const bugun = new Date().toLocaleDateString('tr-TR');
+                
+                let reportRows = [];
+                
+                if(type === 'products') {
+                    reportRows.push(["ÖZCAN OTO GÜNLÜK RAPOR - " + bugun]);
+                    reportRows.push([]); 
+                    data.forEach(i => {
+                        reportRows.push(["PARÇA: " + i.name]);
+                        reportRows.push(["KOD: " + (i.code || "-")]);
+                        reportRows.push(["STOK: " + i.stock + " ADET"]);
+                        reportRows.push(["FİYAT: ₺" + i.price]);
+                        reportRows.push(["------------------"]);
+                    });
+                    let total = 0; data.forEach(p => total += (Number(p.stock) * Number(p.price)));
+                    reportRows.push([]);
+                    reportRows.push(["TOPLAM DEPO DEĞERİ: ₺" + total.toLocaleString('tr-TR')]);
+                } else {
+                    reportRows.push(["ÖZCAN OTO GÜNLÜK SATIŞ RAPORU - " + bugun]);
+                    reportRows.push([]);
+                    data.forEach(i => {
+                        reportRows.push(["MÜŞTERİ: " + i.ad]);
+                        reportRows.push(["PARÇA: " + i.parca_ad]);
+                        reportRows.push(["ADET: " + i.adet]);
+                        reportRows.push(["TARİH: " + i.tarih]);
+                        reportRows.push(["------------------"]);
+                    });
+                }
 
-            const ws = XLSX.utils.aoa_to_sheet(reportRows);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Rapor");
-            XLSX.writeFile(wb, `OzcanOto_${type}_${bugun}.xlsx`);
+                // Hata Çözümü: Excel Karakter ve Format Ayarı
+                const ws = XLSX.utils.aoa_to_sheet(reportRows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Rapor");
+                
+                // .xlsx formatında kaydetmek karakter bozulmasını engeller
+                XLSX.writeFile(wb, `OzcanOto_${type}_${bugun}.xlsx`);
+            } catch (err) {
+                alert("Excel indirilirken hata oluştu: " + err.message);
+            }
         }
 
         async function sendGmailReport(type) {
@@ -267,14 +230,23 @@ HTML_PANEL = r"""
             let body = `ÖZCAN OTO GÜNLÜK RAPOR - ${bugun}\n\n`;
             
             if(type === 'products') {
-                data.forEach(i => body += `PARÇA: ${i.name}\nKOD: ${i.code}\nSTOK: ${i.stock} ADET\nFİYAT: ₺${i.price}\n------------------\n`);
+                data.forEach(i => body += `PARÇA: ${i.name}\nKOD: ${i.code || "-"}\nSTOK: ${i.stock} ADET\nFİYAT: ₺${i.price}\n------------------\n`);
                 let total = 0; data.forEach(p => total += (Number(p.stock) * Number(p.price)));
                 body += `\nTOPLAM DEPO DEĞERİ: ₺${total.toLocaleString('tr-TR')}`;
             } else {
                 data.forEach(i => body += `MÜŞTERİ: ${i.ad}\nPARÇA: ${i.parca_ad}\nADET: ${i.adet}\nTARİH: ${i.tarih}\n------------------\n`);
             }
-            
             window.location.href = `mailto:?subject=Ozcan Oto Rapor&body=${encodeURIComponent(body)}`;
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active-section'));
+            document.getElementById('page-' + pageId).classList.add('active-section');
+            if(pageId === 'dashboard') yukleDashboard();
+            if(pageId === 'stok') yukleStok();
+            if(pageId === 'fatura' || pageId === 'log') yukleFatura();
+            if(pageId === 'cari') yukleCari();
+            if(pageId === 'gider') yukleGider();
         }
 
         async function yukleDashboard() {
@@ -290,8 +262,6 @@ HTML_PANEL = r"""
             });
             document.getElementById('dash-kazanc').innerText = `₺${gK.toLocaleString('tr-TR')}`;
             document.getElementById('dash-gider').innerText = `₺${gG.toLocaleString('tr-TR')}`;
-            document.getElementById('dash-count').innerText = prods.length;
-            document.getElementById('dash-crit').innerText = prods.filter(x => x.stock <= 2).length;
         }
 
         async function hesaplaDepo() {
@@ -300,112 +270,48 @@ HTML_PANEL = r"""
             document.getElementById('dash-depo').innerText = `₺${total.toLocaleString('tr-TR')}`;
         }
 
-        async function sifirla(col) {
-            if(confirm('BU VERİLER SIFIRLANACAK. EMİN MİSİNİZ?')) {
-                await fetch(`/api/clear/${col}`, { method: 'POST' }); yukleDashboard();
-            }
-        }
-
         async function yukleStok() {
             const res = await fetch('/api/products'); const p = await res.json();
             const q = document.getElementById('search').value.toLowerCase();
             document.getElementById('stok-list').innerHTML = p.filter(i => (i.name + i.code).toLowerCase().includes(q)).reverse().map(i => `
                 <tr class="${i.stock <= 2 ? 'critical-row' : ''}">
-                    <td class="px-8 py-5"><b class="uppercase font-bold block">${i.name}</b><span class="text-[10px] text-slate-400 font-bold">${i.code}</span></td>
-                    <td class="px-8 py-5 text-center"><div class="flex items-center justify-center gap-3">
-                        <button onclick="manuelStok('${i._id}', -1)" class="w-6 h-6 bg-slate-200 rounded font-bold">-</button>
-                        <span class="font-extrabold">${i.stock}</span>
-                        <button onclick="manuelStok('${i._id}', 1)" class="w-6 h-6 bg-slate-200 rounded font-bold">+</button>
-                    </div></td>
+                    <td class="px-8 py-5"><b class="uppercase font-bold block">${i.name}</b><span class="text-[10px] text-slate-400 font-bold">${i.code || "-"}</span></td>
+                    <td class="px-8 py-5 text-center font-extrabold">${i.stock}</td>
                     <td class="px-8 py-5 text-right font-bold">₺${Number(i.price).toLocaleString('tr-TR')}</td>
-                    <td class="px-8 py-5 text-right"><button onclick="sil('${i._id}','products')" class="text-slate-200 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td>
+                    <td class="px-8 py-5 text-right"><button onclick="sil('${i._id}','products')" class="text-red-400"><i class="fas fa-trash-alt"></i></button></td>
                 </tr>`).join('');
-        }
-
-        async function manuelStok(id, degisim) {
-            await fetch(`/api/products/${id}/update`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({degisim}) });
-            yukleStok();
         }
 
         async function faturaKes() {
             const ad = document.getElementById('fat-ad').value;
-            const tel = document.getElementById('fat-tel').value;
             const parcaId = document.getElementById('fat-parca').value;
             const adet = document.getElementById('fat-adet').value;
-            if(!ad || !parcaId || !adet) return alert("Lütfen tüm alanları doldurun!");
+            if(!ad || !parcaId || !adet) return alert("Eksik alan!");
             
             const res = await fetch('/api/fatura-kes', { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ ad, tel, parcaId, adet: parseInt(adet), tarih: new Date().toLocaleString('tr-TR') }) 
+                body: JSON.stringify({ ad, tel: document.getElementById('fat-tel').value, parcaId, adet: parseInt(adet), tarih: new Date().toLocaleString('tr-TR') }) 
             });
             const data = await res.json();
-            if(data.ok) { 
-                document.getElementById('fat-adet').value = ''; 
-                yukleFatura(); 
-                alert("SATIŞ TAMAMLANDI"); 
-            } else { alert("Hata: " + (data.error || "Bilinmiyor")); }
+            if(data.ok) { alert("SATIŞ BAŞARILI"); yukleFatura(); } else { alert("Hata: " + data.error); }
         }
 
         async function yukleFatura() {
             const [pRes, fRes] = await Promise.all([fetch('/api/products'), fetch('/api/invoices')]);
             const pData = await pRes.json(); const fData = await fRes.json();
-            
-            const fatSelect = document.getElementById('fat-parca');
-            if(fatSelect) fatSelect.innerHTML = pData.map(i => `<option value="${i._id}">${i.name} (Stok: ${i.stock})</option>`).join('');
-            
-            const list = document.getElementById('fatura-list');
-            if(list) list.innerHTML = fData.reverse().map(i => `
+            document.getElementById('fat-parca').innerHTML = pData.map(i => `<option value="${i._id}">${i.name} (Stok: ${i.stock})</option>`).join('');
+            document.getElementById('fatura-list').innerHTML = fData.reverse().map(i => `
                 <tr>
                     <td class="px-6 py-4 font-bold uppercase">${i.ad}</td>
                     <td class="px-6 py-4">${i.parca_ad}</td>
                     <td class="px-6 py-4 text-center font-bold text-orange-600">${i.adet}</td>
-                    <td class="px-6 py-4 text-right text-[10px] text-slate-400 font-bold uppercase">${i.tarih}</td>
-                    <td class="px-6 py-4 text-right"><button onclick="sil('${i._id}','invoices')" class="text-red-300 hover:text-red-600"><i class="fas fa-trash"></i></button></td>
+                    <td class="px-6 py-4 text-right text-[10px] font-bold uppercase">${i.tarih}</td>
+                    <td class="px-6 py-4 text-right"><button onclick="sil('${i._id}','invoices')" class="text-red-400"><i class="fas fa-trash"></i></button></td>
                 </tr>`).join('');
         }
 
-        async function hizliEkle() {
-            const n = document.getElementById('in-name').value;
-            const obj = { code: document.getElementById('in-code').value || 'KODSUZ', name: n, category: document.getElementById('in-cat').value || 'GENEL', price: parseFloat(document.getElementById('in-price').value || 0), stock: parseInt(document.getElementById('in-stock').value || 1) };
-            await fetch('/api/products', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(obj) });
-            ['in-name', 'in-code', 'in-price', 'in-cat', 'in-stock'].forEach(id => document.getElementById(id).value = '');
-            yukleStok();
-        }
-
-        async function cariEkle() {
-            const ad = document.getElementById('cari-ad').value;
-            const tel = document.getElementById('cari-tel').value;
-            await fetch('/api/customers', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ad, tel, tarih: new Date().toLocaleDateString('tr-TR')}) });
-            document.getElementById('cari-ad').value = ''; document.getElementById('cari-tel').value = ''; yukleCari();
-        }
-
-        async function yukleCari() {
-            const r = await fetch('/api/customers'); const d = await r.json();
-            document.getElementById('cari-list').innerHTML = d.map(i => `<div class="custom-card p-6 flex items-center justify-between border-l-4 border-slate-700"><div><b class="text-sm font-bold uppercase">${i.ad}</b><p class="text-xs text-slate-400 font-semibold">${i.tel || '-'}</p></div><button onclick="sil('${i._id}','customers')" class="text-slate-200 hover:text-red-500"><i class="fas fa-trash"></i></button></div>`).join('');
-        }
-
-        async function giderEkle() {
-            const ad = document.getElementById('gid-ad').value; const t = parseFloat(document.getElementById('gid-tutar').value);
-            await fetch('/api/expenses', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ad, tutar: t, tarih: new Date().toLocaleDateString('tr-TR')}) });
-            document.getElementById('gid-ad').value = ''; document.getElementById('gid-tutar').value = ''; yukleGider();
-        }
-
-        async function yukleGider() {
-            const r = await fetch('/api/expenses'); const d = await r.json();
-            document.getElementById('gider-list').innerHTML = d.map(i => `<div class="custom-card p-6 flex justify-between items-center border-l-4 border-red-400"><div><b class="text-sm font-bold uppercase">${i.ad}</b><span class="text-[10px] block text-slate-400 font-bold">${i.tarih}</span></div><div class="flex items-center gap-6"><b class="text-lg text-red-600 font-extrabold">₺${i.tutar.toLocaleString('tr-TR')}</b><button onclick="sil('${i._id}','expenses')" class="text-slate-200 hover:text-red-400"><i class="fas fa-trash-alt"></i></button></div></div>`).join('');
-        }
-
-        async function sil(id, col) { 
-            if(confirm('SİLİNSİN Mİ?')) { 
-                await fetch(`/api/${col}/${id}`, {method: 'DELETE'}); 
-                if(col === 'products') yukleStok();
-                else if(col === 'customers') yukleCari();
-                else if(col === 'expenses') yukleGider();
-                else if(col === 'invoices') yukleFatura();
-            } 
-        }
-
+        async function sil(id, col) { if(confirm('SİLİNSİN Mİ?')) { await fetch(`/api/${col}/${id}`, {method: 'DELETE'}); showPage('dashboard'); } }
         window.onload = () => { if(localStorage.getItem('pro_session')) { document.getElementById('login-section').classList.add('hidden'); document.getElementById('main-section').classList.remove('hidden'); showPage('dashboard'); } };
     </script>
 </body>
@@ -427,14 +333,6 @@ def handle_api(col):
 def handle_delete(col, id):
     db[col].delete_one({"_id": ObjectId(id)}); return jsonify({"ok": True})
 
-@app.route('/api/products/<id>/update', methods=['POST'])
-def update_stock(id):
-    degisim = request.json.get('degisim', 0)
-    target = db.products.find_one({"_id": ObjectId(id)})
-    current_stock = int(target.get('stock', 0))
-    db.products.update_one({"_id": ObjectId(id)}, {"$set": {"stock": current_stock + int(degisim)}})
-    return jsonify({"ok": True})
-
 @app.route('/api/fatura-kes', methods=['POST'])
 def fatura_kes():
     try:
@@ -443,33 +341,14 @@ def fatura_kes():
         adet = int(data.get('adet', 0))
         parca = db.products.find_one({"_id": ObjectId(parca_id)})
         
-        if not parca: return jsonify({"ok": False, "error": "Parca bulunamadı"}), 404
-        
+        # Hata Çözümü: MongoDB non-numeric string hatası için veriyi sayıya çeviriyoruz
         current_stock = int(parca.get('stock', 0))
         db.products.update_one({"_id": ObjectId(parca_id)}, {"$set": {"stock": current_stock - adet}})
         
-        db.invoices.insert_one({
-            "ad": data['ad'], 
-            "tel": data['tel'], 
-            "parca_id": parca_id, 
-            "parca_ad": parca['name'], 
-            "adet": adet, 
-            "tarih": data['tarih']
-        })
-        
-        db.customers.update_one(
-            {"ad": data['ad']},
-            {"$set": {"ad": data['ad'], "tel": data['tel'], "tarih": datetime.now().strftime("%d.%m.%Y")}},
-            upsert=True
-        )
-        
+        db.invoices.insert_one({"ad": data['ad'], "tel": data['tel'], "parca_id": parca_id, "parca_ad": parca['name'], "adet": adet, "tarih": data['tarih']})
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
-
-@app.route('/api/clear/<col>', methods=['POST'])
-def clear_collection(col):
-    db[col].delete_many({}); return jsonify({"ok": True})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
