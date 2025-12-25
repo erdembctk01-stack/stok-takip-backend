@@ -5,13 +5,24 @@ def fatura_kes(db, data):
     adet = int(data.get('adet', 0))
     parca = db.products.find_one({"_id": ObjectId(parca_id)})
     
-    current_stock = int(parca.get('stock', 0))
-    db.products.update_one({"_id": ObjectId(parca_id)}, {"$set": {"stock": current_stock - adet}})
+    if not parca: return {"ok": False, "error": "Parça bulunamadı"}
     
+    # Stok Güncelleme
+    yeni_stok = int(parca.get('stock', 0)) - adet
+    db.products.update_one({"_id": ObjectId(parca_id)}, {"$set": {"stock": yeni_stok}})
+    
+    # Detaylı Fatura Kaydı
     db.invoices.insert_one({
-        "ad": data['ad'], 
-        "parca_ad": parca['name'], 
-        "adet": adet, 
+        "musteri": data['ad'],
+        "parca_ad": parca['name'],
+        "adet": adet,
+        "fiyat": parca['price'],
+        "toplam": float(parca['price'].replace(',','.')) * adet if parca.get('price') else 0,
         "tarih": data['tarih']
     })
     return {"ok": True}
+
+def satis_gecmisi(db):
+    items = list(db.invoices.find())
+    for i in items: i['_id'] = str(i['_id'])
+    return items
