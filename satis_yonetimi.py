@@ -7,12 +7,9 @@ def fatura_kes(db, data):
     
     if not parca: return {"ok": False}
     
-    # Stok Düş
     db.products.update_one({"_id": ObjectId(parca_id)}, {"$inc": {"stock": -adet}})
     
-    # Fiyatı kullanıcı girişinden al ve sayıya çevir
     try:
-        # Gelen verideki virgülü noktaya çevirip float yapıyoruz
         satis_fiyati = float(str(data.get('fiyat', 0)).replace(',', '.'))
     except:
         satis_fiyati = 0.0
@@ -25,7 +22,7 @@ def fatura_kes(db, data):
         "parca_ad": parca['name'],
         "adet": adet,
         "tarih": data['tarih'],
-        "toplam": toplam # Sayısal olarak kaydediliyor
+        "toplam": toplam
     }
     
     db.invoices.insert_one(fatura_verisi)
