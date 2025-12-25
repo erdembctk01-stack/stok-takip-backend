@@ -20,7 +20,7 @@ def index():
 @app.route('/api/<col>', methods=['GET', 'POST'])
 def handle_generic_api(col):
     if request.method == 'GET':
-        items = list(db[col].find().sort('_id', -1)) # En yeni kayıt üstte
+        items = list(db[col].find().sort('_id', -1))
         for i in items: i['_id'] = str(i['_id'])
         return jsonify(items)
     
