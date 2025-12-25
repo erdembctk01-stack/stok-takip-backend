@@ -72,7 +72,6 @@ HTML_PANEL = r"""
         <main class="flex-1 relative overflow-hidden">
             <div id="page-dashboard" class="page-content active-section">
                 <h3 class="text-3xl font-extrabold text-slate-800 uppercase italic mb-8">Sistem Paneli</h3>
-                
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     <div class="custom-card p-8 border-l-4 border-emerald-500">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Günlük Satış Kazancı</p>
@@ -90,7 +89,6 @@ HTML_PANEL = r"""
                         <button onclick="hesaplaDepo()" class="mt-4 text-[9px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase">Hesapla</button>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="custom-card p-8 border-l-4 border-slate-900">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kayıtlı Parça Çeşidi</p>
@@ -196,21 +194,17 @@ HTML_PANEL = r"""
 
         async function yukleDashboard() {
             const [pRes, gRes, fRes] = await Promise.all([fetch('/api/products'), fetch('/api/expenses'), fetch('/api/invoices')]);
-            const prods = await pRes.json();
-            const exps = await gRes.json();
-            const invs = await fRes.json();
+            const prods = await pRes.json(); const exps = await gRes.json(); const invs = await fRes.json();
             const bugun = new Date().toLocaleDateString('tr-TR');
-
-            let gunGider = 0; exps.forEach(e => { if(e.tarih === bugun) gunGider += Number(e.tutar); });
-            let gunKazanc = 0; invs.forEach(i => {
+            let gG = 0; exps.forEach(e => { if(e.tarih === bugun) gG += Number(e.tutar); });
+            let gK = 0; invs.forEach(i => {
                 if(i.tarih.includes(bugun)) {
                     const p = prods.find(pr => pr._id === i.parca_id || pr.name === i.parca_ad);
-                    if(p) gunKazanc += (Number(i.adet) * Number(p.price));
+                    if(p) gK += (Number(i.adet) * Number(p.price));
                 }
             });
-
-            document.getElementById('dash-kazanc').innerText = `₺${gunKazanc.toLocaleString('tr-TR')}`;
-            document.getElementById('dash-gider').innerText = `₺${gunGider.toLocaleString('tr-TR')}`;
+            document.getElementById('dash-kazanc').innerText = `₺${gK.toLocaleString('tr-TR')}`;
+            document.getElementById('dash-gider').innerText = `₺${gG.toLocaleString('tr-TR')}`;
             document.getElementById('dash-count').innerText = prods.length;
             document.getElementById('dash-crit').innerText = prods.filter(x => x.stock <= 2).length;
             document.getElementById('dash-depo').innerText = "****";
@@ -223,9 +217,8 @@ HTML_PANEL = r"""
         }
 
         async function sifirla(col) {
-            if(confirm('BU BÖLÜMDEKİ TÜM KAYITLAR SİLİNECEK. EMİN MİSİNİZ?')) {
-                await fetch(`/api/clear/${col}`, { method: 'POST' });
-                yukleDashboard();
+            if(confirm('BU VERİLER SIFIRLANACAK. EMİN MİSİNİZ?')) {
+                await fetch(`/api/clear/${col}`, { method: 'POST' }); yukleDashboard();
             }
         }
 
@@ -253,10 +246,11 @@ HTML_PANEL = r"""
         async function faturaKes() {
             const ad = document.getElementById('fat-ad').value;
             const parcaId = document.getElementById('fat-parca').value;
-            const adet = parseInt(document.getElementById('fat-adet').value);
-            if(!ad || !parcaId || !adet) return alert("Eksik veri!");
-            const res = await fetch('/api/fatura-kes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ad, tel: document.getElementById('fat-tel').value, parcaId, adet, tarih: new Date().toLocaleString('tr-TR') }) });
-            if((await res.json()).ok) { document.getElementById('fat-adet').value = ''; yukleFatura(); alert("SATIŞ KAYDEDİLDİ"); }
+            const adet = document.getElementById('fat-adet').value;
+            if(!ad || !parcaId || !adet) return alert("Lütfen tüm alanları doldurun!");
+            const res = await fetch('/api/fatura-kes', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ad, tel: document.getElementById('fat-tel').value, parcaId, adet: parseInt(adet), tarih: new Date().toLocaleString('tr-TR') }) });
+            const data = await res.json();
+            if(data.ok) { document.getElementById('fat-adet').value = ''; yukleFatura(); alert("SATIŞ TAMAMLANDI"); } else { alert("Hata: " + (data.error || "Bilinmiyor")); }
         }
 
         async function yukleFatura() {
@@ -322,21 +316,26 @@ def handle_delete(col, id):
 @app.route('/api/products/<id>/update', methods=['POST'])
 def update_stock(id):
     degisim = request.json.get('degisim', 0)
-    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": degisim}})
+    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": int(degisim)}})
     return jsonify({"ok": True})
 
 @app.route('/api/fatura-kes', methods=['POST'])
 def fatura_kes():
-    data = request.json
-    parca = db.products.find_one({"_id": ObjectId(data['parcaId'])})
-    db.products.update_one({"_id": ObjectId(data['parcaId'])}, {"$inc": {"stock": -data['adet']}})
-    db.invoices.insert_one({"ad": data['ad'], "tel": data['tel'], "parca_id": data['parcaId'], "parca_ad": parca['name'], "adet": data['adet'], "tarih": data['tarih']})
-    return jsonify({"ok": True})
+    try:
+        data = request.json
+        parca_id = data.get('parcaId')
+        adet = int(data.get('adet', 0))
+        parca = db.products.find_one({"_id": ObjectId(parca_id)})
+        if not parca: return jsonify({"ok": False, "error": "Parca bulunamadı"}), 404
+        db.products.update_one({"_id": ObjectId(parca_id)}, {"$inc": {"stock": -adet}})
+        db.invoices.insert_one({"ad": data['ad'], "tel": data['tel'], "parca_id": parca_id, "parca_ad": parca['name'], "adet": adet, "tarih": data['tarih']})
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 @app.route('/api/clear/<col>', methods=['POST'])
 def clear_collection(col):
-    db[col].delete_many({})
-    return jsonify({"ok": True})
+    db[col].delete_many({}); return jsonify({"ok": True})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
