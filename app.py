@@ -5,11 +5,7 @@ from pymongo import MongoClient
 import stok_yonetimi 
 import satis_yonetimi
 
-# Klasör yollarını kesinleştiriyoruz
-base_dir = os.path.abspath(os.path.dirname(__file__))
-template_dir = os.path.join(base_dir, 'templates')
-
-app = Flask(__name__, template_folder=template_dir)
+app = Flask(__name__, template_folder='templates')
 CORS(app)
 
 # MongoDB Bağlantısı
@@ -21,21 +17,22 @@ db = client.stok_veritabani
 def index():
     return render_template('index.html')
 
-@app.route('/api/products', methods=['GET'])
-def get_stok():
-    return jsonify(stok_yonetimi.stok_listele(db))
+@app.route('/api/<col>', methods=['GET', 'POST'])
+def handle_generic_api(col):
+    if request.method == 'GET':
+        items = list(db[col].find())
+        for i in items: i['_id'] = str(i['_id'])
+        return jsonify(items)
+    db[col].insert_one(request.json)
+    return jsonify({"ok": True})
 
-@app.route('/api/products/<id>', methods=['DELETE'])
-def delete_stok(id):
-    return jsonify(stok_yonetimi.stok_sil(db, id))
+@app.route('/api/<col>/<id>', methods=['DELETE'])
+def handle_delete(col, id):
+    return jsonify(stok_yonetimi.genel_sil(db, col, id))
 
 @app.route('/api/fatura-kes', methods=['POST'])
 def post_fatura():
     return jsonify(satis_yonetimi.fatura_kes(db, request.json))
-
-@app.route('/api/invoices', methods=['GET'])
-def get_gecmis():
-    return jsonify(satis_yonetimi.satis_gecmisi(db))
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
