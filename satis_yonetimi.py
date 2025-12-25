@@ -3,16 +3,18 @@ from bson.objectid import ObjectId
 from datetime import datetime
 
 satis_bp = Blueprint('satis_bp', __name__)
+db = None
 
-# Ana db nesnesini app'den alıyoruz
-from app import db
+def init_db(database_instance):
+    global db
+    db = database_instance
 
 @satis_bp.route('/api/fatura-kes', methods=['POST'])
 def fatura_kes():
     data = request.json
     product = db.products.find_one({"_id": ObjectId(data['parcaId'])})
     
-    # Eski Mantık: Fiyat otomatik stoktan gelir
+    # Eski mantık: Fiyatı sadece stoktan çeker
     satis_fiyati = float(product.get('price', 0))
     adet = int(data.get('adet', 1))
     
@@ -25,9 +27,7 @@ def fatura_kes():
     }
     
     db.invoices.insert_one(fatura)
-    # Stok düşürme
     db.products.update_one({"_id": ObjectId(data['parcaId'])}, {"$inc": {"stock": -adet}})
-    
     return jsonify({"status": "success"})
 
 @satis_bp.route('/api/invoices', methods=['GET'])
