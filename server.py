@@ -78,12 +78,10 @@ HTML_PANEL = r"""
                     <div class="custom-card p-8 border-l-4 border-emerald-500">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Günlük Satış Kazancı</p>
                         <h4 id="dash-kazanc" class="text-3xl font-black text-emerald-600">₺0</h4>
-                        <button onclick="sifirla('invoices')" class="mt-4 text-[9px] font-bold text-red-400 uppercase hover:underline">Kazancı Sıfırla</button>
                     </div>
                     <div class="custom-card p-8 border-l-4 border-red-500">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Günlük Toplam Gider</p>
                         <h4 id="dash-gider" class="text-3xl font-black text-red-600">₺0</h4>
-                        <button onclick="sifirla('expenses')" class="mt-4 text-[9px] font-bold text-red-400 uppercase hover:underline">Gideri Sıfırla</button>
                     </div>
                     <div class="custom-card p-8 border-l-4 border-blue-600">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Toplam Depo Değeri</p>
@@ -211,15 +209,13 @@ HTML_PANEL = r"""
                     });
                 }
 
-                // Hata Çözümü: Excel Karakter ve Format Ayarı
+                // XLSX formatında (Binary string yerine array of arrays) kayıt karakter sorununu çözer
                 const ws = XLSX.utils.aoa_to_sheet(reportRows);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Rapor");
-                
-                // .xlsx formatında kaydetmek karakter bozulmasını engeller
+                XLSX.utils.book_append_sheet(wb, ws, "OzcanOtoRapor");
                 XLSX.writeFile(wb, `OzcanOto_${type}_${bugun}.xlsx`);
             } catch (err) {
-                alert("Excel indirilirken hata oluştu: " + err.message);
+                alert("Hata: " + err.message);
             }
         }
 
@@ -228,7 +224,6 @@ HTML_PANEL = r"""
             const data = await res.json();
             const bugun = new Date().toLocaleDateString('tr-TR');
             let body = `ÖZCAN OTO GÜNLÜK RAPOR - ${bugun}\n\n`;
-            
             if(type === 'products') {
                 data.forEach(i => body += `PARÇA: ${i.name}\nKOD: ${i.code || "-"}\nSTOK: ${i.stock} ADET\nFİYAT: ₺${i.price}\n------------------\n`);
                 let total = 0; data.forEach(p => total += (Number(p.stock) * Number(p.price)));
@@ -264,12 +259,6 @@ HTML_PANEL = r"""
             document.getElementById('dash-gider').innerText = `₺${gG.toLocaleString('tr-TR')}`;
         }
 
-        async function hesaplaDepo() {
-            const res = await fetch('/api/products'); const prods = await res.json();
-            let total = 0; prods.forEach(p => total += (Number(p.stock) * Number(p.price)));
-            document.getElementById('dash-depo').innerText = `₺${total.toLocaleString('tr-TR')}`;
-        }
-
         async function yukleStok() {
             const res = await fetch('/api/products'); const p = await res.json();
             const q = document.getElementById('search').value.toLowerCase();
@@ -287,7 +276,6 @@ HTML_PANEL = r"""
             const parcaId = document.getElementById('fat-parca').value;
             const adet = document.getElementById('fat-adet').value;
             if(!ad || !parcaId || !adet) return alert("Eksik alan!");
-            
             const res = await fetch('/api/fatura-kes', { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
@@ -311,7 +299,16 @@ HTML_PANEL = r"""
                 </tr>`).join('');
         }
 
-        async function sil(id, col) { if(confirm('SİLİNSİN Mİ?')) { await fetch(`/api/${col}/${id}`, {method: 'DELETE'}); showPage('dashboard'); } }
+        async function sil(id, col) { 
+            if(confirm('SİLİNSİN Mİ?')) { 
+                await fetch(`/api/${col}/${id}`, {method: 'DELETE'}); 
+                // DASHBOARD'A ATMA SORUNU BURADA ÇÖZÜLDÜ:
+                if(col === 'products') yukleStok(); 
+                else if(col === 'invoices') yukleFatura();
+                else showPage(col === 'expenses' ? 'gider' : 'cari');
+            } 
+        }
+
         window.onload = () => { if(localStorage.getItem('pro_session')) { document.getElementById('login-section').classList.add('hidden'); document.getElementById('main-section').classList.remove('hidden'); showPage('dashboard'); } };
     </script>
 </body>
@@ -340,11 +337,8 @@ def fatura_kes():
         parca_id = data.get('parcaId')
         adet = int(data.get('adet', 0))
         parca = db.products.find_one({"_id": ObjectId(parca_id)})
-        
-        # Hata Çözümü: MongoDB non-numeric string hatası için veriyi sayıya çeviriyoruz
         current_stock = int(parca.get('stock', 0))
         db.products.update_one({"_id": ObjectId(parca_id)}, {"$set": {"stock": current_stock - adet}})
-        
         db.invoices.insert_one({"ad": data['ad'], "tel": data['tel'], "parca_id": parca_id, "parca_ad": parca['name'], "adet": adet, "tarih": data['tarih']})
         return jsonify({"ok": True})
     except Exception as e:
