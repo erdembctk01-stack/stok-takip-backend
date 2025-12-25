@@ -1,98 +1,164 @@
-<script>
-        /**
-         * 1. STOK YÖNETİM MODÜLÜ
-         * Parça listeleme ve silme işlemlerinden sorumludur.
-         */
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>ÖZCAN OTO | Kurumsal Yönetim</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; display: flex; }
+        .sidebar { background: #0f172a; min-height: 100vh; width: 280px; flex-shrink: 0; }
+        .page-content { display: none; padding: 40px; width: 100%; height: 100vh; overflow-y: auto; }
+        .active-section { display: block; }
+        .sidebar-link { cursor: pointer; padding: 15px; color: #94a3b8; transition: 0.3s; }
+        .sidebar-link:hover { background: #1e293b; color: white; }
+        .sidebar-active { background: #f97316 !important; color: white !important; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar text-white">
+        <div class="p-8 border-b border-slate-800 text-center font-bold text-xl italic uppercase">ÖZCAN OTO</div>
+        <nav class="mt-5">
+            <div onclick="showPage('dashboard')" id="btn-dashboard" class="sidebar-link sidebar-active"><i class="fas fa-chart-line mr-2"></i> DASHBOARD</div>
+            <div onclick="showPage('stok')" id="btn-stok" class="sidebar-link"><i class="fas fa-boxes mr-2"></i> PARÇA YÖNETİMİ</div>
+            <div onclick="showPage('fatura')" id="btn-fatura" class="sidebar-link"><i class="fas fa-file-invoice mr-2"></i> FATURA KES</div>
+        </nav>
+    </aside>
+
+    <main class="flex-1">
+        <div id="page-dashboard" class="page-content active-section">
+            <h2 class="text-3xl font-bold mb-8 uppercase text-slate-800">Sistem Özeti</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div onclick="RaporModulu.excelIndir('products')" class="bg-white p-8 rounded-2xl shadow-sm border-l-8 border-green-600 cursor-pointer hover:bg-green-50 transition-all">
+                    <h4 class="font-bold text-slate-500 uppercase text-xs tracking-widest">Envanter Raporu</h4>
+                    <p class="text-xl font-black">STOK EXCEL OLARAK İNDİR</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-stok" class="page-content">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold uppercase">Stok Listesi</h2>
+                <input id="search-box" oninput="StokModulu.ara()" type="text" placeholder="Parça ara..." class="p-3 border rounded-xl w-64 outline-none focus:border-orange-500">
+            </div>
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 font-bold text-slate-500">
+                        <tr><th class="p-4 uppercase">Parça Adı</th><th class="p-4 text-center uppercase">Stok</th><th class="p-4 text-right uppercase">Fiyat</th><th class="p-4 text-right uppercase">İşlem</th></tr>
+                    </thead>
+                    <tbody id="stok-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="page-fatura" class="page-content">
+            <h2 class="text-2xl font-bold mb-6 uppercase">Yeni Satış İşlemi</h2>
+            <div class="bg-white p-8 rounded-xl shadow-lg max-w-2xl">
+                <div class="space-y-4">
+                    <input id="fat-ad" type="text" placeholder="Müşteri Adı Soyadı" class="w-full p-4 border rounded-xl outline-none focus:border-orange-500">
+                    <select id="fat-parca" class="w-full p-4 border rounded-xl outline-none focus:border-orange-500"></select>
+                    <input id="fat-adet" type="number" placeholder="Satış Adedi" class="w-full p-4 border rounded-xl outline-none focus:border-orange-500">
+                    <button onclick="FaturaModulu.gonder()" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-5 rounded-xl shadow-lg transition-all uppercase tracking-widest">Satışı Onayla ve Stoktan Düş</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let tumUrunler = [];
+
         const StokModulu = {
             async yukle() {
                 try {
                     const res = await fetch('/api/products');
-                    const data = await res.json();
-                    this.tabloyuCiz(data);
-                } catch (hata) {
-                    console.error("Stok yüklenirken hata:", hata);
-                }
+                    tumUrunler = await res.json();
+                    this.tabloyuCiz(tumUrunler);
+                } catch (e) { console.error("Stok hatası:", e); }
             },
             tabloyuCiz(data) {
                 const liste = document.getElementById('stok-list');
+                const fatSelec = document.getElementById('fat-parca');
                 if(!liste) return;
-                liste.innerHTML = data.reverse().map(i => `
-                    <tr class="border-t">
+                
+                liste.innerHTML = data.map(i => `
+                    <tr class="border-t hover:bg-slate-50">
                         <td class="p-4 font-bold uppercase">${i.name}</td>
-                        <td class="p-4 text-center">${i.stock}</td>
-                        <td class="p-4 text-right">₺${i.price}</td>
+                        <td class="p-4 text-center font-bold text-lg ${i.stock < 5 ? 'text-red-600' : ''}">${i.stock}</td>
+                        <td class="p-4 text-right font-bold">₺${i.price}</td>
                         <td class="p-4 text-right">
-                            <button onclick="StokModulu.sil('${i._id}')" class="text-red-500"><i class="fas fa-trash"></i></button>
+                            <button onclick="StokModulu.sil('${i._id}')" class="text-red-500 hover:scale-110 transition-transform"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>`).join('');
+
+                if(fatSelec) {
+                    fatSelec.innerHTML = data.map(i => `<option value="${i._id}">${i.name.toUpperCase()} (Kalan: ${i.stock})</option>`).join('');
+                }
+            },
+            ara() {
+                const term = document.getElementById('search-box').value.toLowerCase();
+                const filtrelenmis = tumUrunler.filter(u => u.name.toLowerCase().includes(term));
+                this.tabloyuCiz(filtrelenmis);
             },
             async sil(id) {
-                if(!confirm('Bu parçayı silmek istediğinize emin misiniz?')) return;
+                if(!confirm('Bu parçayı kalıcı olarak silmek istediğinize emin misiniz?')) return;
                 await fetch(`/api/products/${id}`, {method: 'DELETE'});
-                this.yukle(); // Sadece stok listesini yeniler
+                this.yukle();
             }
         };
 
-        /**
-         * 2. SATIŞ VE FATURA MODÜLÜ
-         * Yeni satış yapma ve stoktan düşme işlemlerinden sorumludur.
-         */
         const FaturaModulu = {
             async gonder() {
-                const form = {
+                const data = {
                     ad: document.getElementById('fat-ad').value,
                     parcaId: document.getElementById('fat-parca').value,
                     adet: document.getElementById('fat-adet').value,
                     tarih: new Date().toLocaleString('tr-TR')
                 };
-
-                if(!form.ad || !form.adet) return alert("Lütfen boş alan bırakmayın!");
-
+                if(!data.ad || !data.adet) return alert("Lütfen müşteri adı ve adet girin!");
+                
                 const res = await fetch('/api/fatura-kes', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(form)
+                    body: JSON.stringify(data)
                 });
-
-                if(res.ok) {
-                    alert("Satış başarıyla kaydedildi.");
-                    StokModulu.yukle(); // Satış sonrası stok listesini de günceller
+                if(res.ok) { 
+                    alert("Satış başarıyla tamamlandı!"); 
+                    document.getElementById('fat-ad').value = "";
+                    document.getElementById('fat-adet').value = "";
+                    this.yukle();
                 }
             }
         };
 
-        /**
-         * 3. RAPORLAMA MODÜLÜ
-         * Excel indirme ve veri dışa aktarma işlemlerinden sorumludur.
-         */
         const RaporModulu = {
             async excelIndir(tip) {
                 const res = await fetch(`/api/${tip}`);
                 const data = await res.json();
                 const bugun = new Date().toLocaleDateString('tr-TR');
-                
-                let satirlar = [["ÖZCAN OTO RAPOR - " + bugun], []];
+                let rows = [["ÖZCAN OTO RAPOR - " + bugun], []];
                 data.forEach(i => {
-                    satirlar.push(["PARÇA: " + (i.name || i.parca_ad)]);
-                    satirlar.push(["MİKTAR: " + (i.stock || i.adet)]);
-                    satirlar.push(["------------------"]);
+                    rows.push(["PARÇA: " + (i.name || i.parca_ad)]);
+                    rows.push(["KOD: " + (i.code || "-")]);
+                    rows.push(["MİKTAR: " + (i.stock || i.adet)]);
+                    rows.push(["FİYAT: ₺" + (i.price || "-")]);
+                    rows.push(["------------------"]);
                 });
-
-                const ws = XLSX.utils.aoa_to_sheet(satirlar);
+                const ws = XLSX.utils.aoa_to_sheet(rows);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Rapor");
                 XLSX.writeFile(wb, `OzcanOto_${tip}_${bugun}.xlsx`);
             }
         };
 
-        /**
-         * SAYFA KONTROLÜ
-         */
         function showPage(p) {
             document.querySelectorAll('.page-content').forEach(x => x.classList.remove('active-section'));
+            document.querySelectorAll('.sidebar-link').forEach(x => x.classList.remove('sidebar-active'));
             document.getElementById('page-' + p).classList.add('active-section');
-            
-            // Sayfa açıldığında ilgili modülü çalıştır
-            if(p === 'stok') StokModulu.yukle();
+            document.getElementById('btn-' + p).classList.add('sidebar-active');
+            if(p === 'stok' || p === 'fatura') StokModulu.yukle();
         }
+        window.onload = () => { StokModulu.yukle(); };
     </script>
+</body>
+</html>
