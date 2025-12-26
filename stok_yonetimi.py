@@ -5,19 +5,12 @@ def stok_guncelle(db, id, miktar):
     return {"ok": True}
 
 def parca_ekle(db, data):
-    # Stock değerini kontrol et ve sayıya çevir
-    try:
-        adet = int(data.get('stock')) if data.get('stock') else 1
-    except:
-        adet = 1
-
+    adet = int(data.get('stock')) if data.get('stock') and str(data.get('stock')).strip() != "" else 1
     db.products.insert_one({
-        "name": data.get('name'),
+        "name": data['name'],
         "code": data.get('code', '-'),
         "category": data.get('category', 'Genel'),
         "stock": adet,
-        "price": data.get('price', "0"),
-        "description": data.get('description', ''),   # Yeni alan
-        "compatibility": data.get('compatibility', '') # Yeni alan
+        "price": data.get('price', "0")
     })
     return {"ok": True}
