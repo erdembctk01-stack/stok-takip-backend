@@ -38,6 +38,7 @@ def update_stock(id):
 
 @app.route('/api/products/edit/<id>', methods=['POST'])
 def edit_product(id):
+    # Bu rota stok_yonetimi.py içindeki parca_duzenle'yi çağırır
     return jsonify(stok_yonetimi.parca_duzenle(db, id, request.json))
 
 @app.route('/api/toplu-satis', methods=['POST'])
