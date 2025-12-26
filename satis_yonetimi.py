@@ -1,34 +1,18 @@
 from bson.objectid import ObjectId
 
-def fatura_kes(db, data):
-    parca_id = data.get('parcaId')
-    adet = int(data.get('adet', 1))
-    parca = db.products.find_one({"_id": ObjectId(parca_id)})
-    
-    if not parca: return {"ok": False}
-    
-    db.products.update_one({"_id": ObjectId(parca_id)}, {"$inc": {"stock": -adet}})
-    
-    try:
-        satis_fiyati = float(str(data.get('fiyat', 0)).replace(',', '.'))
-    except:
-        satis_fiyati = 0.0
-    
-    toplam = satis_fiyati * adet
-    
-    fatura_verisi = {
-        "ad": data['ad'],
-        "tel": data.get('tel', '-'),
-        "parca_ad": parca['name'],
-        "adet": adet,
-        "tarih": data['tarih'],
-        "toplam": toplam
-    }
-    
-    db.invoices.insert_one(fatura_verisi)
-    db.customers.update_one(
-        {"tel": data.get('tel')},
-        {"$set": {"ad": data['ad'], "son_islem": data['tarih']}},
-        upsert=True
-    )
+def stok_guncelle(db, id, miktar):
+    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": miktar}})
+    return {"ok": True}
+
+def parca_ekle(db, data):
+    adet = int(data.get('stock')) if data.get('stock') and str(data.get('stock')).strip() != "" else 1
+    db.products.insert_one({
+        "name": data['name'],
+        "code": data.get('code', '-'),
+        "category": data.get('category', 'Genel'),
+        "stock": adet,
+        "price": data.get('price', "0"),
+        "description": data.get('description', ''), # YENİ ALAN
+        "compatibility": data.get('compatibility', '') # YENİ ALAN
+    })
     return {"ok": True}
