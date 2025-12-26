@@ -38,7 +38,8 @@ def update_stock(id):
 
 @app.route('/api/products/edit/<id>', methods=['POST'])
 def edit_product(id):
-    return jsonify(stok_yonetimi.parca_duzenle(db, id, request.json))
+    data = request.json
+    return jsonify(stok_yonetimi.parca_duzenle(db, id, data))
 
 @app.route('/api/toplu-satis', methods=['POST'])
 def toplu_satis():
@@ -76,16 +77,11 @@ def get_stats():
 
     kazanc = sum(temizle(i.get('toplam', 0)) for i in invoices)
     gider = sum(temizle(e.get('tutar', 0)) for e in expenses)
-    depo = sum(temizle(p.get('price', 0)) * int(p.get('stock', 0)) for p in products)
-    
-    return jsonify({
-        "kazanc": f"₺{kazanc:,.2f}",
-        "gider": f"₺{gider:,.2f}",
-        "depo": f"₺{depo:,.2f}"
-    })
+    depo = sum(int(p.get('stock', 0)) * temizle(p.get('price', 0)) for p in products)
+
+    return jsonify({"kazanc": f"₺{kazanc:,.2f}", "gider": f"₺{gider:,.2f}", "depo": f"₺{depo:,.2f}"})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
+    # Render için kritik düzeltme: Portu çevresel değişkenden al, hostu 0.0.0.0 yap
+    port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
