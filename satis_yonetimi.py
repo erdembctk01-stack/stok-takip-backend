@@ -14,7 +14,6 @@ def toplu_fatura_kes(db, data):
         adet = int(item['adet'])
         fiyat = float(item['fiyat'])
         
-        # Satış yapıldığında stoktan düşme işlemi
         db.products.update_one({"_id": ObjectId(p_id)}, {"$inc": {"stock": -adet}})
         
         toplam_fatura += (adet * fiyat)
