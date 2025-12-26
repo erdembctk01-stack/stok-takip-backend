@@ -5,7 +5,8 @@ def stok_guncelle(db, id, miktar):
     return {"ok": True}
 
 def parca_duzenle(db, id, data):
-    # Stok (miktar) HARİÇ her şeyi (Fiyat dahil) günceller
+    # Bu fonksiyon stok (miktar) HARİÇ her şeyi günceller.
+    # index.html'den gelen JSON verisindeki anahtarların burada karşılandığından emin oluyoruz.
     update_data = {
         "name": data.get('name'),
         "code": data.get('code'),
@@ -14,6 +15,8 @@ def parca_duzenle(db, id, data):
         "desc": data.get('desc', ''),
         "compat": data.get('compat', '')
     }
+    
+    # MongoDB güncelleme işlemi
     db.products.update_one({"_id": ObjectId(id)}, {"$set": update_data})
     return {"ok": True}
 
