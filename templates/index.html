@@ -218,7 +218,7 @@
                 <input type="text" id="p-name" placeholder="Parça Adı" class="col-span-2">
                 <input type="text" id="p-code" placeholder="Parça Kodu">
                 <input type="text" id="p-cat" placeholder="Kategori">
-                <input type="number" id="p-stock" placeholder="Başlangıç Stoğu">
+                <input type="number" id="p-stock" placeholder="Stok Miktarı">
                 <input type="text" id="p-price" placeholder="Birim Fiyat (₺)">
             </div>
             <textarea id="p-desc" placeholder="Parça Açıklaması" class="mt-4 h-24"></textarea>
@@ -235,7 +235,7 @@
             <h3 class="text-xl font-bold mb-6">Yeni Gider Kaydı</h3>
             <input type="date" id="g-tarih" class="mb-4">
             <input type="text" id="g-desc" placeholder="Gider Açıklaması" class="mb-4">
-            <input type="text" id="g-cat" placeholder="Kategori (Kira, Elektrik, Vergi vb.)" class="mb-4">
+            <input type="text" id="g-cat" placeholder="Kategori" class="mb-4">
             <input type="text" id="g-tutar" placeholder="Tutar (₺)" class="mb-4">
             <div class="flex justify-end space-x-4 mt-8">
                 <button onclick="closeModals()" class="px-6 py-2 text-slate-500 font-medium">İptal</button>
@@ -304,25 +304,21 @@
             });
         }
 
+        // DÜZENLEME BUTONU GELİŞTİRMESİ
         function parcaDuzenleAc(id) {
             const p = parcalar.find(item => item._id === id);
             if(!p) return;
             
-            // Modal başlığını ve ID alanını güncelle
             document.getElementById('modal-parca-baslik').innerText = "Parçayı Düzenle";
             document.getElementById('edit-id').value = p._id;
             
-            // Mevcut verileri inputlara doldur
             document.getElementById('p-name').value = p.name;
             document.getElementById('p-code').value = p.code;
             document.getElementById('p-cat').value = p.category;
-            document.getElementById('p-stock').value = p.stock;
+            document.getElementById('p-stock').value = p.stock; // Kullanıcı stoğu da buradan güncelleyebilir
             document.getElementById('p-price').value = p.price;
             document.getElementById('p-desc').value = p.desc || '';
             document.getElementById('p-compat').value = p.compat || '';
-            
-            // Stoğu düzenleme sırasında kilitliyoruz (genelde stok artırımı ayrı butonla yapılır)
-            document.getElementById('p-stock').disabled = true;
             
             document.getElementById('modal-parca').style.display = 'flex';
         }
@@ -333,22 +329,17 @@
                 name: document.getElementById('p-name').value,
                 code: document.getElementById('p-code').value,
                 category: document.getElementById('p-cat').value,
-                stock: document.getElementById('p-stock').value,
+                stock: parseInt(document.getElementById('p-stock').value),
                 price: document.getElementById('p-price').value,
                 desc: document.getElementById('p-desc').value,
                 compat: document.getElementById('p-compat').value
             };
 
-            let url = '/api/products';
-            let method = 'POST';
-
-            if(id) {
-                // Eğer ID varsa güncelleme endpoint'ini çağır
-                url = `/api/products/edit/${id}`;
-            }
-
+            // Eğer ID varsa düzenleme (edit) API'sine, yoksa ekleme API'sine gider
+            const url = id ? `/api/products/edit/${id}` : '/api/products';
+            
             const res = await fetch(url, {
-                method: method,
+                method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
             });
@@ -356,10 +347,6 @@
             if(res.ok) {
                 closeModals();
                 yukleStok();
-                // Formu temizle ve başlığı eski haline getir
-                document.getElementById('edit-id').value = '';
-                document.getElementById('modal-parca-baslik').innerText = "Yeni Parça Ekle";
-                document.getElementById('p-stock').disabled = false;
             }
         }
 
@@ -374,9 +361,7 @@
             const sId = document.getElementById('f-parca-sec').value;
             const adet = parseInt(document.getElementById('f-adet').value);
             const parca = parcalar.find(p => p._id === sId);
-            
             if(adet > parca.stock) { alert("Yetersiz stok!"); return; }
-
             const varMi = sepet.find(s => s.parcaId === sId);
             if(varMi) { varMi.adet += adet; } 
             else {
@@ -397,15 +382,7 @@
             sepet.forEach((s, index) => {
                 const t = s.adet * s.fiyat;
                 toplam += t;
-                liste.innerHTML += `
-                    <tr>
-                        <td>${s.name}</td>
-                        <td>${s.adet}</td>
-                        <td>₺${s.fiyat}</td>
-                        <td>₺${t}</td>
-                        <td><button onclick="sepettenSil(${index})" class="text-red-500"><i class="fas fa-times"></i></button></td>
-                    </tr>
-                `;
+                liste.innerHTML += `<tr><td>${s.name}</td><td>${s.adet}</td><td>₺${s.fiyat}</td><td>₺${t}</td><td><button onclick="sepettenSil(${index})" class="text-red-500"><i class="fas fa-times"></i></button></td></tr>`;
             });
             document.getElementById('sepet-toplam').innerText = `₺${toplam.toFixed(2)}`;
         }
@@ -419,14 +396,13 @@
                 tarih: document.getElementById('f-tarih').value,
                 items: sepet
             };
-            if(!data.ad || sepet.length === 0) { alert("Müşteri ve sepet boş olamaz!"); return; }
-
+            if(!data.ad || sepet.length === 0) { alert("Eksik bilgi!"); return; }
             await fetch('/api/toplu-satis', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
             });
-            alert("Fatura başarıyla kesildi!");
+            alert("Fatura kesildi!");
             sepet = []; guncelleSepet(); yukleStok(); yukleFaturalar();
         }
 
@@ -436,15 +412,7 @@
             const liste = document.getElementById('fatura-listesi');
             liste.innerHTML = '';
             data.forEach(f => {
-                liste.innerHTML += `
-                    <tr>
-                        <td>${f.tarih}</td>
-                        <td>${f.ad}</td>
-                        <td class="text-xs text-slate-500">${f.parca_ad}</td>
-                        <td class="font-bold">₺${f.toplam}</td>
-                        <td><button onclick="sil('invoices','${f._id}')" class="text-red-400"><i class="fas fa-trash"></i></button></td>
-                    </tr>
-                `;
+                liste.innerHTML += `<tr><td>${f.tarih}</td><td>${f.ad}</td><td class="text-xs">${f.parca_ad}</td><td class="font-bold">₺${f.toplam}</td><td><button onclick="sil('invoices','${f._id}')" class="text-red-400"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         }
 
@@ -454,15 +422,7 @@
             const liste = document.getElementById('gider-listesi');
             liste.innerHTML = '';
             data.forEach(g => {
-                liste.innerHTML += `
-                    <tr>
-                        <td>${g.tarih}</td>
-                        <td>${g.desc}</td>
-                        <td>${g.cat}</td>
-                        <td class="text-red-600 font-bold">₺${g.tutar}</td>
-                        <td><button onclick="sil('expenses','${g._id}')" class="text-red-400"><i class="fas fa-trash"></i></button></td>
-                    </tr>
-                `;
+                liste.innerHTML += `<tr><td>${g.tarih}</td><td>${g.desc}</td><td>${g.cat}</td><td class="text-red-600 font-bold">₺${g.tutar}</td><td><button onclick="sil('expenses','${g._id}')" class="text-red-400"><i class="fas fa-trash"></i></button></td></tr>`;
             });
         }
 
@@ -487,34 +447,25 @@
             const liste = document.getElementById('musteri-listesi');
             liste.innerHTML = '';
             data.forEach(m => {
-                liste.innerHTML += `
-                    <tr>
-                        <td class="font-bold">${m.ad}</td>
-                        <td>${m.tel}</td>
-                        <td>${m.son_islem}</td>
-                        <td><button class="text-blue-500"><i class="fas fa-eye"></i></button></td>
-                    </tr>
-                `;
+                liste.innerHTML += `<tr><td class="font-bold">${m.ad}</td><td>${m.tel}</td><td>${m.son_islem}</td><td><button class="text-blue-500"><i class="fas fa-eye"></i></button></td></tr>`;
             });
         }
 
         function closeModals() { 
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            // Modal kapandığında formu sıfırla
             document.getElementById('edit-id').value = '';
             document.getElementById('modal-parca-baslik').innerText = "Yeni Parça Ekle";
-            document.getElementById('p-stock').disabled = false;
+            // Inputları temizle
+            document.querySelectorAll('#modal-parca input, #modal-parca textarea').forEach(i => i.value = '');
         }
 
         function tabloAra(tabloId, deger) {
             const rows = document.querySelectorAll(`#${tabloId} tbody tr`);
-            rows.forEach(row => {
-                row.style.display = row.innerText.toLowerCase().includes(deger.toLowerCase()) ? '' : 'none';
-            });
+            rows.forEach(row => { row.style.display = row.innerText.toLowerCase().includes(deger.toLowerCase()) ? '' : 'none'; });
         }
 
         async function sil(col, id) {
-            if(confirm('Silmek istediğinize emin misiniz?')) {
+            if(confirm('Silinsin mi?')) {
                 await fetch(`/api/${col}/${id}`, {method: 'DELETE'});
                 if(col === 'expenses') yukleGiderler();
                 if(col === 'invoices') yukleFaturalar();
@@ -523,7 +474,6 @@
 
         async function resetFinance() {
             await fetch('/api/reset-finance', {method: 'POST'});
-            alert("Tüm veriler temizlendi.");
             location.reload();
         }
 
@@ -537,29 +487,22 @@
             });
         }
 
-        function triggerImport(type) { 
-            activeImportType = type; 
-            document.getElementById('import-file').click(); 
-        }
+        function triggerImport(type) { activeImportType = type; document.getElementById('import-file').click(); }
 
         async function processImport(input) {
             const file = input.files[0];
             if(!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    await fetch(`/api/import/${activeImportType}`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(data)
-                    });
-                    alert("Veriler başarıyla yüklendi.");
-                    location.reload();
-                } catch(err) { alert("Dosya okuma hatası!"); }
+                const data = JSON.parse(e.target.result);
+                await fetch(`/api/import/${activeImportType}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                location.reload();
             };
             reader.readAsText(file);
-            input.value = "";
         }
     </script>
 </body>
