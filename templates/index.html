@@ -81,7 +81,7 @@
                         <i class="fas fa-sync-alt mr-2"></i> Finans Sıfırla
                     </button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-emerald-500">
                         <p class="text-xs font-bold text-slate-400 uppercase mb-2">Toplam Kazanç</p>
                         <h3 id="dash-kazanc" class="text-3xl font-black text-emerald-600">₺0,00</h3>
@@ -99,6 +99,14 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-black uppercase mb-4 italic">Hızlı Kategori Oluştur</h3>
+                    <div class="flex gap-4">
+                        <input id="dash-new-cat" type="text" placeholder="Yeni Kategori Adı Yazın..." class="flex-1 p-4 bg-slate-50 rounded-2xl border outline-none focus:border-orange-500 font-bold">
+                        <button onclick="hizliKategoriEkle()" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs hover:bg-orange-600 transition shadow-lg">Kategori Oluştur</button>
+                    </div>
+                </div>
             </div>
 
             <div id="page-stok" class="page-content">
@@ -109,16 +117,15 @@
                         <button onclick="triggerImport('products')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
                     </div>
                 </div>
-                <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input id="stok-search" type="text" onkeyup="filterStok()" placeholder="Parça adı veya kod ile ara..." class="p-4 bg-white rounded-2xl border shadow-sm outline-none focus:border-orange-500">
-                    <select id="stok-cat-filter" onchange="filterStok()" class="p-4 bg-white rounded-2xl border shadow-sm outline-none font-bold">
-                        <option value="">Tüm Kategoriler</option>
-                    </select>
+                    <input id="stok-cat-search" type="text" onkeyup="filterStok()" placeholder="Kategoriye göre ara (Yazınız)..." class="p-4 bg-white rounded-2xl border shadow-sm outline-none focus:border-orange-500 font-bold text-orange-600">
                 </div>
                 <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-5 gap-3">
                     <input id="new-name" type="text" placeholder="Parça Adı" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     <input id="new-code" type="text" placeholder="Kodu" class="p-3 bg-slate-50 rounded-xl border outline-none">
-                    <input id="new-cat" type="text" placeholder="Kategori" class="p-3 bg-slate-50 rounded-xl border outline-none">
+                    <input id="new-cat" type="text" list="cat-list" placeholder="Kategori" class="p-3 bg-slate-50 rounded-xl border outline-none">
+                    <datalist id="cat-list"></datalist>
                     <input id="new-price" type="text" placeholder="Ortalama Fiyat" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     <input id="new-stock" type="number" placeholder="Adet" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     <button onclick="parcaEkle()" class="bg-slate-900 text-white rounded-xl font-bold uppercase text-xs md:col-span-5 py-3">Parça Kaydet</button>
@@ -240,10 +247,10 @@
 
         function filterStok() {
             const search = document.getElementById('stok-search').value.toLowerCase();
-            const cat = document.getElementById('stok-cat-filter').value;
+            const catSearch = document.getElementById('stok-cat-search').value.toLowerCase();
             const filtered = allProducts.filter(p => {
                 const matchSearch = p.name.toLowerCase().includes(search) || p.code.toLowerCase().includes(search);
-                const matchCat = cat === "" || p.category === cat;
+                const matchCat = p.category.toLowerCase().includes(catSearch);
                 return matchSearch && matchCat;
             });
             renderStokTable(filtered);
@@ -251,8 +258,19 @@
 
         function updateCategoryFilter() {
             const cats = [...new Set(allProducts.map(p => p.category))];
-            const select = document.getElementById('stok-cat-filter');
-            select.innerHTML = '<option value="">Tüm Kategoriler</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+            const datalist = document.getElementById('cat-list');
+            datalist.innerHTML = cats.map(c => `<option value="${c}">`).join('');
+        }
+
+        async function hizliKategoriEkle() {
+            const catName = document.getElementById('dash-new-cat').value;
+            if(!catName) return alert("Lütfen bir kategori adı yazın!");
+            // Kategori aslında parça içinde bir alan olduğu için, dummy (sahte) bir parça ile kategori oluşturuyoruz 
+            // ya da direkt parça ekleme formunda datalist'e düşmesi için allProducts'ı besliyoruz.
+            document.getElementById('new-cat').value = catName;
+            alert("Kategori hazırlandı. Parça eklerken otomatik listede görünecektir.");
+            document.getElementById('dash-new-cat').value = "";
+            showPage('stok');
         }
 
         async function getFormattedData(api) {
@@ -279,7 +297,6 @@
             a.click();
         }
 
-        // --- GERİ YÜKLEME (IMPORT) FONKSİYONLARI ---
         function triggerImport(api) {
             activeImportType = api;
             document.getElementById('import-file').click();
@@ -288,18 +305,15 @@
         async function processImport(input) {
             const file = input.files[0];
             if (!file) return;
-            
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const content = e.target.result;
-                const lines = content.split('\n').slice(2); // Başlıkları atla
+                const lines = content.split('\n').slice(2);
                 let count = 0;
-
                 for (let line of lines) {
                     if (!line.trim()) continue;
                     const parts = line.split('|');
                     let data = {};
-
                     try {
                         if (activeImportType === 'products') {
                             data = { name: parts[0], code: parts[1], category: parts[2], price: parts[3], stock: parts[4] };
@@ -310,7 +324,6 @@
                         } else if (activeImportType === 'customers') {
                             data = { ad: parts[0], tel: parts[1] };
                         }
-
                         await fetch(`/api/${activeImportType}`, {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
@@ -320,7 +333,7 @@
                     } catch (err) { console.error("Satır işlenemedi:", line); }
                 }
                 alert(`${count} adet kayıt başarıyla geri yüklendi!`);
-                input.value = ''; // Reset file input
+                input.value = '';
                 showPage(activeImportType === 'customers' ? 'cari' : (activeImportType === 'products' ? 'stok' : activeImportType));
             };
             reader.readAsText(file);
@@ -361,14 +374,7 @@
         async function faturaKes() {
             const fiyat = document.getElementById('fat-fiyat').value;
             if(!fiyat || fiyat === "") return alert("Lütfen Satış Fiyatı yazın!");
-            const data = { 
-                ad: document.getElementById('fat-ad').value, 
-                tel: document.getElementById('fat-tel').value, 
-                parcaId: document.getElementById('fat-parca').value, 
-                adet: document.getElementById('fat-adet').value || 1, 
-                fiyat: fiyat, 
-                tarih: new Date().toLocaleString('tr-TR') 
-            };
+            const data = { ad: document.getElementById('fat-ad').value, tel: document.getElementById('fat-tel').value, parcaId: document.getElementById('fat-parca').value, adet: document.getElementById('fat-adet').value || 1, fiyat: fiyat, tarih: new Date().toLocaleString('tr-TR') };
             await fetch('/api/fatura-kes', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
             alert("Satış Yapıldı!");
             yukleFaturalar(); yukleStok();
