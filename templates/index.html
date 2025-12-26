@@ -167,7 +167,13 @@
             </div>
 
             <div id="page-veresiye" class="page-content">
-                <h2 class="text-2xl font-black italic uppercase mb-6">Veresiye Kaydı</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-black italic uppercase">Veresiye Kaydı</h2>
+                    <div class="flex gap-2">
+                        <button onclick="exportExcel('veresiye')" class="bg-green-600 text-white btn-action">Excel Al</button>
+                        <button onclick="triggerImport('veresiye')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
+                    </div>
+                </div>
                 <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-5 gap-4">
                     <input id="ver-ad" type="text" placeholder="Müşteri" class="p-3 bg-slate-50 rounded-xl border outline-none font-bold">
                     <input id="ver-tel" type="text" placeholder="Telefon" class="p-3 bg-slate-50 rounded-xl border outline-none">
@@ -189,7 +195,13 @@
             </div>
 
             <div id="page-cari" class="page-content">
-                <h2 class="text-2xl font-black italic uppercase mb-6">Cari Rehber</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-black italic uppercase">Cari Rehber</h2>
+                    <div class="flex gap-2">
+                        <button onclick="exportExcel('customers')" class="bg-green-600 text-white btn-action">Excel Al</button>
+                        <button onclick="triggerImport('customers')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
+                    </div>
+                </div>
                 <div id="cari-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </div>
         </main>
@@ -199,6 +211,7 @@
         let allProducts = [];
         let sepet = [];
         let kategoriler = [];
+        let activeImportType = ""; // Import tipi takibi için eklendi
 
         window.onload = () => {
             const savedExpiry = localStorage.getItem('oto_expiry');
@@ -252,7 +265,7 @@
 
         function updateCatList() {
             const list = document.getElementById('cat-list');
-            list.innerHTML = kategoriler.map(c => `<option value="${c}">`).join('');
+            if(list) list.innerHTML = kategoriler.map(c => `<option value="${c}">`).join('');
         }
 
         // --- STOK YÖNETİMİ ---
@@ -305,7 +318,6 @@
             const nCode = prompt("STOK KODU:", item.code);
             const nCat = prompt("KATEGORİ:", item.category);
             const nPrice = prompt("FİYAT:", item.price);
-            // STOK prompt'u kaldırıldı, sadece diğerleri güncellenir.
 
             await fetch(`/api/products/edit/${item._id}`, {
                 method: 'POST',
@@ -442,12 +454,14 @@
             }
         }
 
+        // --- YEDEKLEME VE GERİ YÜKLEME (GÜNCELLENDİ: .txt UZANTISI) ---
         function exportExcel(col) {
             fetch(`/api/${col}`).then(res => res.json()).then(data => {
-                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'text/plain'});
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url; a.download = `${col}_yedek.json`;
+                a.href = url; 
+                a.download = `${col}_yedek.txt`; // .json yerine .txt yapıldı
                 a.click();
             });
         }
@@ -459,17 +473,24 @@
 
         async function processImport(input) {
             const file = input.files[0];
+            if(!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
-                const data = JSON.parse(e.target.result);
-                await fetch(`/api/import/${activeImportType}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-                location.reload();
+                try {
+                    const data = JSON.parse(e.target.result);
+                    await fetch(`/api/import/${activeImportType}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(data)
+                    });
+                    alert("Veriler başarıyla yüklendi.");
+                    location.reload();
+                } catch(err) {
+                    alert("Dosya okuma hatası! Lütfen geçerli bir yedek dosyası seçin.");
+                }
             };
             reader.readAsText(file);
+            input.value = ""; // Aynı dosyayı tekrar seçebilmek için temizle
         }
     </script>
 </body>
