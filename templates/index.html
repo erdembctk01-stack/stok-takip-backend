@@ -118,6 +118,20 @@
                         <button onclick="triggerImport('products')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
                     </div>
                 </div>
+
+                <div class="bg-orange-50 p-6 rounded-3xl border border-orange-200 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-orange-600 ml-2">Parça Adı veya Kod İle Ara</label>
+                        <input type="text" id="stok-arama-input" onkeyup="stokFiltrele()" placeholder="Örn: Balata, Filtre veya 001..." class="w-full p-4 bg-white rounded-2xl border-2 border-transparent focus:border-orange-500 outline-none font-bold shadow-sm">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-orange-600 ml-2">Kategoriye Göre Süz</label>
+                        <select id="stok-kategori-filtre" onchange="stokFiltrele()" class="w-full p-4 bg-white rounded-2xl border-2 border-transparent focus:border-orange-500 outline-none font-bold shadow-sm">
+                            <option value="">TÜM KATEGORİLER</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-4 gap-3">
                     <input id="new-name" type="text" placeholder="Parça Adı" class="p-3 bg-slate-50 rounded-xl border outline-none font-bold">
                     <input id="new-code" type="text" placeholder="Kodu" class="p-3 bg-slate-50 rounded-xl border outline-none">
@@ -129,6 +143,7 @@
                     <input id="new-stock" type="number" placeholder="Adet" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     <button onclick="parcaEkle()" class="bg-slate-900 text-white rounded-xl font-bold uppercase text-xs md:col-span-4 py-3">Parça Kaydet</button>
                 </div>
+
                 <div class="bg-white rounded-3xl shadow-sm border overflow-hidden">
                     <table class="w-full text-left">
                         <thead class="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase">
@@ -234,7 +249,6 @@
             if (savedExpiry && new Date().getTime() < savedExpiry) {
                 checkLogin(true);
             } else if (hasAccount === 'true') {
-                // Eğer çıkış yapıldıysa veya süresi dolduysa ama daha önce girildiyse kayıtlı hesabı göster
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('remembered-account').style.display = 'block';
             } else {
@@ -242,23 +256,15 @@
             }
         };
 
-        function showNormalLogin() {
-            document.getElementById('remembered-account').style.display = 'none';
-            document.getElementById('login-form').style.display = 'block';
-        }
-
         function checkLogin(isRemembered) {
             const user = isRemembered ? 'ozcanoto' : document.getElementById('user-in').value;
             const pass = isRemembered ? 'eren9013' : document.getElementById('pass-in').value;
             
             if(user === 'ozcanoto' && pass === 'eren9013') {
-                localStorage.setItem('has_account', 'true'); // Kayıtlı hesap kartı için
-                
+                localStorage.setItem('has_account', 'true');
                 if(!isRemembered && document.getElementById('remember-me').checked) { 
-                    // 20 GÜN (20 * 24 * 60 * 60 * 1000)
                     localStorage.setItem('oto_expiry', new Date().getTime() + (20 * 24 * 60 * 60 * 1000)); 
                 }
-                
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-layout').style.display = 'flex';
                 showPage('dashboard');
@@ -285,47 +291,38 @@
             if(p === 'dashboard') loadStats();
         }
 
-        function hizliKategoriEkle() {
-            const yeniCat = document.getElementById('dash-new-cat').value;
-            if(!yeniCat) return;
-            kategoriler.push(yeniCat);
-            updateCatList();
-            document.getElementById('dash-new-cat').value = "";
-            alert("Kategori eklendi: " + yeniCat);
+        // KATEGORİ VE STOK FİLTRELEME (YENİ)
+        function stokFiltrele() {
+            const term = document.getElementById('stok-arama-input').value.toLowerCase();
+            const cat = document.getElementById('stok-kategori-filtre').value;
+            
+            const filtered = allProducts.filter(p => {
+                const matchesTerm = p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term);
+                const matchesCat = cat === "" || p.category === cat;
+                return matchesTerm && matchesCat;
+            });
+            renderStokTable(filtered);
         }
 
         function updateCatList() {
             const list = document.getElementById('cat-list');
+            const filterSelect = document.getElementById('stok-kategori-filtre');
+            
             if(list) list.innerHTML = kategoriler.map(c => `<option value="${c}">`).join('');
+            if(filterSelect) {
+                const currentVal = filterSelect.value;
+                filterSelect.innerHTML = '<option value="">TÜM KATEGORİLER</option>' + 
+                    kategoriler.map(c => `<option value="${c}" ${c === currentVal ? 'selected' : ''}>${c.toUpperCase()}</option>`).join('');
+            }
         }
 
         async function yukleStok() {
             const res = await fetch('/api/products');
             allProducts = await res.json();
-            const existingCats = [...new Set(allProducts.map(p => p.category))];
-            kategoriler = [...new Set([...kategoriler, ...existingCats])];
+            kategoriler = [...new Set(allProducts.map(p => p.category))];
             updateCatList();
             renderStokTable(allProducts);
             renderParcaSelect(allProducts);
-        }
-
-        // Fatura kısmındaki parça listesini render eder
-        function renderParcaSelect(data) {
-            if(document.getElementById('fat-parca')) {
-                document.getElementById('fat-parca').innerHTML = data.map(i => 
-                    `<option value="${i._id}">${i.name.toUpperCase()} (Kod: ${i.code}) - Stok: ${i.stock}</option>`
-                ).join('');
-            }
-        }
-
-        // YENİ: Satış yaparken parça arama
-        function parcaFiltrele() {
-            const term = document.getElementById('parca-ara-input').value.toLowerCase();
-            const filtered = allProducts.filter(p => 
-                p.name.toLowerCase().includes(term) || 
-                p.code.toLowerCase().includes(term)
-            );
-            renderParcaSelect(filtered);
         }
 
         function renderStokTable(data) {
@@ -346,10 +343,26 @@
                         </div>
                     </td>
                     <td class="p-5 text-right flex gap-2 justify-end">
-                        <button onclick='parcaDuzenlePencere(${JSON.stringify(i)})' class="text-blue-500 p-2"><i class="fas fa-edit"></i></button>
+                        <button onclick='parcaDuzenlePencere(${JSON.stringify(i)})' class="bg-blue-50 text-blue-600 p-2 rounded-lg hover:bg-blue-600 hover:text-white transition"><i class="fas fa-edit"></i></button>
                         <button onclick="sil('${i._id}', 'products')" class="text-slate-300 hover:text-red-500 p-2"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`).join('');
+        }
+
+        async function parcaDuzenlePencere(item) {
+            const nName = prompt("YENİ PARÇA ADI:", item.name); if (nName === null) return;
+            const nCode = prompt("YENİ STOK KODU:", item.code);
+            const nCat = prompt("YENİ KATEGORİ:", item.category);
+            const nDesc = prompt("YENİ AÇIKLAMA:", item.desc || "");
+            const nCompat = prompt("YENİ UYUMLU ARAÇLAR:", item.compat || "");
+            const nPrice = prompt("YENİ FİYAT:", item.price);
+
+            await fetch(`/api/products/edit/${item._id}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name:nName, code:nCode, category:nCat, desc:nDesc, compat:nCompat, price:nPrice})
+            });
+            yukleStok();
         }
 
         async function stokHizliGuncelle(id, miktar) {
@@ -357,23 +370,6 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({miktar})
-            });
-            yukleStok();
-        }
-
-        async function parcaDuzenlePencere(item) {
-            // Stok hariç her şeyi düzenleme
-            const nName = prompt("YENİ PARÇA ADI:", item.name); if (nName === null) return;
-            const nCode = prompt("YENİ STOK KODU:", item.code);
-            const nCat = prompt("YENİ KATEGORİ:", item.category);
-            const nDesc = prompt("YENİ AÇIKLAMA:", item.desc || "");
-            const nCompat = prompt("YENİ UYUMLU ARAÇLAR:", item.compat || "");
-            const nPrice = prompt("YENİ FİYAT:", item.price); // Fiyat artık düzenlenebilir
-
-            await fetch(`/api/products/edit/${item._id}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name:nName, code:nCode, category:nCat, desc:nDesc, compat:nCompat, price:nPrice})
             });
             yukleStok();
         }
@@ -388,9 +384,25 @@
                 price: document.getElementById('new-price').value, 
                 stock: document.getElementById('new-stock').value 
             };
+            if(!data.name) return alert("Parça adı boş olamaz!");
             await fetch('/api/products', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
             yukleStok();
             document.querySelectorAll('#page-stok input').forEach(inp => inp.value = "");
+        }
+
+        // SATIŞ FONKSİYONLARI
+        function renderParcaSelect(data) {
+            if(document.getElementById('fat-parca')) {
+                document.getElementById('fat-parca').innerHTML = data.map(i => 
+                    `<option value="${i._id}">${i.name.toUpperCase()} (Kod: ${i.code}) - Stok: ${i.stock}</option>`
+                ).join('');
+            }
+        }
+
+        function parcaFiltrele() {
+            const term = document.getElementById('parca-ara-input').value.toLowerCase();
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term));
+            renderParcaSelect(filtered);
         }
 
         function sepeteEkle() {
@@ -441,6 +453,7 @@
                 <td class="p-4 text-right"><button onclick="sil('${f._id}', 'invoices')" class="text-slate-300"><i class="fas fa-times"></i></button></td></tr>`).join('');
         }
 
+        // VERESİYE, GİDER, CARİ...
         async function veresiyeEkle() {
             const data = { ad: document.getElementById('ver-ad').value, tel: document.getElementById('ver-tel').value, islem: document.getElementById('ver-islem').value, para: document.getElementById('ver-para').value };
             await fetch('/api/veresiye', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
@@ -498,7 +511,7 @@
         }
 
         async function sifirlaFinans() {
-            if(confirm('Tüm finansal veriler (satış ve giderler) silinecek! Onaylıyor musunuz?')) {
+            if(confirm('Tüm finansal veriler silinecek! Onaylıyor musunuz?')) {
                 await fetch('/api/reset-finance', {method: 'POST'});
                 loadStats();
                 if(document.getElementById('page-fatura').classList.contains('active-section')) yukleFaturalar();
@@ -515,11 +528,7 @@
             });
         }
 
-        function triggerImport(type) { 
-            activeImportType = type; 
-            document.getElementById('import-file').click(); 
-        }
-
+        function triggerImport(type) { activeImportType = type; document.getElementById('import-file').click(); }
         async function processImport(input) {
             const file = input.files[0];
             if(!file) return;
@@ -532,12 +541,10 @@
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(data)
                     });
-                    alert("Veriler başarıyla yüklendi.");
                     location.reload();
-                } catch(err) { alert("Dosya okuma hatası!"); }
+                } catch(err) { alert("Hata!"); }
             };
             reader.readAsText(file);
-            input.value = "";
         }
     </script>
 </body>
