@@ -19,7 +19,6 @@
         #main-layout { display: none; width: 100%; }
         #remembered-account { display: none; cursor: pointer; border: 2px solid #e2e8f0; padding: 15px; border-radius: 20px; transition: 0.3s; margin-bottom: 20px; }
         #remembered-account:hover { border-color: #f97316; background: #fff7ed; }
-        .cart-item { border-bottom: 1px solid #e2e8f0; padding: 10px 0; }
     </style>
 </head>
 <body>
@@ -146,10 +145,7 @@
                         <input id="fat-ad" type="text" placeholder="Müşteri Adı" class="w-full p-4 bg-slate-50 rounded-xl border outline-none font-bold">
                         <input id="fat-tel" type="text" placeholder="Telefon" class="w-full p-4 bg-slate-50 rounded-xl border outline-none">
                         <hr>
-                        <div class="relative">
-                            <input type="text" id="parca-ara-input" onkeyup="parcaFiltrele()" placeholder="Satılacak parçayı ara..." class="w-full p-3 mb-2 bg-orange-50 border border-orange-200 rounded-xl outline-none text-sm italic font-bold">
-                            <select id="fat-parca" class="w-full p-4 bg-slate-50 rounded-xl border outline-none font-bold"></select>
-                        </div>
+                        <select id="fat-parca" class="w-full p-4 bg-slate-50 rounded-xl border outline-none font-bold"></select>
                         <div class="flex gap-2">
                             <input id="fat-adet" type="number" value="1" class="w-1/3 p-4 bg-slate-50 rounded-xl border outline-none">
                             <input id="fat-fiyat" type="text" placeholder="Fiyat" class="w-2/3 p-4 bg-orange-50 border-orange-200 rounded-xl border outline-none font-bold text-orange-700">
@@ -166,7 +162,7 @@
                             <button onclick="topluSatisTamamla()" class="w-full mt-4 bg-orange-600 text-white font-black py-4 rounded-xl uppercase shadow-lg">SATIŞI ONAYLA</button>
                         </div>
                     </div>
-                    <div class="lg:col-span-2 space-y-4">
+                    <div class="lg:col-span-2">
                         <div class="bg-white rounded-3xl shadow-sm border overflow-hidden">
                             <table class="w-full text-left text-sm">
                                 <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-400">
@@ -222,7 +218,6 @@
 
     <script>
         let allProducts = [];
-        let allInvoices = [];
         let sepet = [];
         let kategoriler = [];
         let activeImportType = "";
@@ -234,7 +229,6 @@
             if (savedExpiry && new Date().getTime() < savedExpiry) {
                 checkLogin(true);
             } else if (hasAccount === 'true') {
-                // Eğer çıkış yapıldıysa veya süresi dolduysa ama daha önce girildiyse kayıtlı hesabı göster
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('remembered-account').style.display = 'block';
             } else {
@@ -242,35 +236,21 @@
             }
         };
 
-        function showNormalLogin() {
-            document.getElementById('remembered-account').style.display = 'none';
-            document.getElementById('login-form').style.display = 'block';
-        }
-
         function checkLogin(isRemembered) {
             const user = isRemembered ? 'ozcanoto' : document.getElementById('user-in').value;
             const pass = isRemembered ? 'eren9013' : document.getElementById('pass-in').value;
-            
             if(user === 'ozcanoto' && pass === 'eren9013') {
-                localStorage.setItem('has_account', 'true'); // Kayıtlı hesap kartı için
-                
+                localStorage.setItem('has_account', 'true');
                 if(!isRemembered && document.getElementById('remember-me').checked) { 
-                    // 20 GÜN (20 * 24 * 60 * 60 * 1000)
                     localStorage.setItem('oto_expiry', new Date().getTime() + (20 * 24 * 60 * 60 * 1000)); 
                 }
-                
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-layout').style.display = 'flex';
                 showPage('dashboard');
-            } else { 
-                document.getElementById('error-msg').classList.remove('hidden'); 
-            }
+            } else { document.getElementById('error-msg').classList.remove('hidden'); }
         }
 
-        function logout() { 
-            localStorage.removeItem('oto_expiry'); 
-            window.location.reload(); 
-        }
+        function logout() { localStorage.removeItem('oto_expiry'); window.location.reload(); }
 
         function showPage(p) {
             document.querySelectorAll('.page-content').forEach(s => s.classList.remove('active-section'));
@@ -285,47 +265,13 @@
             if(p === 'dashboard') loadStats();
         }
 
-        function hizliKategoriEkle() {
-            const yeniCat = document.getElementById('dash-new-cat').value;
-            if(!yeniCat) return;
-            kategoriler.push(yeniCat);
-            updateCatList();
-            document.getElementById('dash-new-cat').value = "";
-            alert("Kategori eklendi: " + yeniCat);
-        }
-
-        function updateCatList() {
-            const list = document.getElementById('cat-list');
-            if(list) list.innerHTML = kategoriler.map(c => `<option value="${c}">`).join('');
-        }
-
         async function yukleStok() {
             const res = await fetch('/api/products');
             allProducts = await res.json();
-            const existingCats = [...new Set(allProducts.map(p => p.category))];
-            kategoriler = [...new Set([...kategoriler, ...existingCats])];
-            updateCatList();
             renderStokTable(allProducts);
-            renderParcaSelect(allProducts);
-        }
-
-        // Fatura kısmındaki parça listesini render eder
-        function renderParcaSelect(data) {
             if(document.getElementById('fat-parca')) {
-                document.getElementById('fat-parca').innerHTML = data.map(i => 
-                    `<option value="${i._id}">${i.name.toUpperCase()} (Kod: ${i.code}) - Stok: ${i.stock}</option>`
-                ).join('');
+                document.getElementById('fat-parca').innerHTML = allProducts.map(i => `<option value="${i._id}">${i.name.toUpperCase()} (Stok: ${i.stock})</option>`).join('');
             }
-        }
-
-        // YENİ: Satış yaparken parça arama
-        function parcaFiltrele() {
-            const term = document.getElementById('parca-ara-input').value.toLowerCase();
-            const filtered = allProducts.filter(p => 
-                p.name.toLowerCase().includes(term) || 
-                p.code.toLowerCase().includes(term)
-            );
-            renderParcaSelect(filtered);
         }
 
         function renderStokTable(data) {
@@ -352,28 +298,27 @@
                 </tr>`).join('');
         }
 
-        async function stokHizliGuncelle(id, miktar) {
-            await fetch(`/api/products/update/${id}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({miktar})
-            });
-            yukleStok();
-        }
-
         async function parcaDuzenlePencere(item) {
-            // Stok hariç her şeyi düzenleme
             const nName = prompt("YENİ PARÇA ADI:", item.name); if (nName === null) return;
             const nCode = prompt("YENİ STOK KODU:", item.code);
             const nCat = prompt("YENİ KATEGORİ:", item.category);
             const nDesc = prompt("YENİ AÇIKLAMA:", item.desc || "");
             const nCompat = prompt("YENİ UYUMLU ARAÇLAR:", item.compat || "");
-            const nPrice = prompt("YENİ FİYAT:", item.price); // Fiyat artık düzenlenebilir
+            const nPrice = prompt("YENİ FİYAT:", item.price);
 
             await fetch(`/api/products/edit/${item._id}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({name:nName, code:nCode, category:nCat, desc:nDesc, compat:nCompat, price:nPrice})
+            });
+            yukleStok();
+        }
+
+        async function stokHizliGuncelle(id, miktar) {
+            await fetch(`/api/products/update/${id}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({miktar})
             });
             yukleStok();
         }
@@ -409,7 +354,7 @@
             const liste = document.getElementById('sepet-listesi');
             if(sepet.length > 0) alan.classList.remove('hidden'); else alan.classList.add('hidden');
             liste.innerHTML = sepet.map((item, index) => `
-                <div class="flex justify-between items-center cart-item">
+                <div class="flex justify-between items-center py-2 border-b">
                     <span>${item.name} (x${item.adet})</span>
                     <b>₺${item.toplam.toFixed(2)} <button onclick="sepettenCikar(${index})" class="text-red-500 ml-2">×</button></b>
                 </div>`).join('');
@@ -421,7 +366,7 @@
         async function topluSatisTamamla() {
             const ad = document.getElementById('fat-ad').value;
             const tel = document.getElementById('fat-tel').value;
-            if(!ad || sepet.length === 0) return alert("Müşteri adı ve sepet dolu olmalı!");
+            if(!ad || sepet.length === 0) return alert("Bilgileri kontrol edin!");
             await fetch('/api/toplu-satis', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -433,44 +378,12 @@
 
         async function yukleFaturalar() {
             const res = await fetch('/api/invoices');
-            allInvoices = await res.json();
-            document.getElementById('fatura-list').innerHTML = allInvoices.map(f => `
+            const data = await res.json();
+            document.getElementById('fatura-list').innerHTML = data.map(f => `
                 <tr class="border-b"><td class="p-4"><b>${f.ad}</b><br><small>${f.tarih}</small></td>
                 <td class="p-4 text-xs font-bold text-orange-600">${f.parca_ad}</td>
                 <td class="p-4 font-black">₺${f.toplam}</td>
                 <td class="p-4 text-right"><button onclick="sil('${f._id}', 'invoices')" class="text-slate-300"><i class="fas fa-times"></i></button></td></tr>`).join('');
-        }
-
-        async function veresiyeEkle() {
-            const data = { ad: document.getElementById('ver-ad').value, tel: document.getElementById('ver-tel').value, islem: document.getElementById('ver-islem').value, para: document.getElementById('ver-para').value };
-            await fetch('/api/veresiye', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-            yukleVeresiye();
-            document.querySelectorAll('#page-veresiye input').forEach(inp => inp.value = "");
-        }
-
-        async function yukleVeresiye() {
-            const res = await fetch('/api/veresiye');
-            const data = await res.json();
-            document.getElementById('veresiye-list').innerHTML = data.map(v => `<tr class="border-t"><td class="p-5 font-black uppercase">${v.ad}<br><small>${v.tel}</small></td><td class="p-5">${v.islem}</td><td class="p-5 font-black text-blue-600">₺${v.para}</td><td class="p-5 text-right"><button onclick="sil('${v._id}', 'veresiye')" class="text-slate-300"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-        }
-
-        async function giderEkle() {
-            const data = { aciklama: document.getElementById('exp-name').value, tutar: document.getElementById('exp-amount').value };
-            await fetch('/api/expenses', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-            yukleGider();
-            document.querySelectorAll('#page-gider input').forEach(inp => inp.value = "");
-        }
-
-        async function yukleGider() {
-            const res = await fetch('/api/expenses');
-            const data = await res.json();
-            document.getElementById('gider-list').innerHTML = data.map(e => `<div class="bg-white p-4 rounded-xl border flex justify-between items-center"><div><b>${e.aciklama}</b><br><span class="text-red-600">₺${e.tutar}</span></div><button onclick="sil('${e._id}', 'expenses')" class="text-slate-300"><i class="fas fa-trash"></i></button></div>`).join('');
-        }
-
-        async function yukleCari() {
-            const res = await fetch('/api/customers');
-            const data = await res.json();
-            document.getElementById('cari-list').innerHTML = data.map(c => `<div class="bg-white p-5 rounded-2xl border flex justify-between items-center"><div><h4 class="font-black uppercase">${c.ad}</h4><p class="text-xs">${c.tel}</p></div><button onclick="sil('${c._id}', 'customers')" class="text-red-200"><i class="fas fa-user-minus"></i></button></div>`).join('');
         }
 
         async function loadStats() {
@@ -480,64 +393,20 @@
             document.getElementById('dash-gider').innerText = stats.gider;
         }
 
-        async function hesaplaDashboard() {
-            const res = await fetch('/api/dashboard-stats');
-            const stats = await res.json();
-            document.getElementById('dash-deger').innerText = stats.depo;
-        }
-
         async function sil(id, col) {
             if(confirm('Silinsin mi?')) {
                 await fetch(`/api/${col}/${id}`, {method: 'DELETE'});
                 if(col === 'products') yukleStok();
                 else if(col === 'invoices') yukleFaturalar();
-                else if(col === 'expenses') yukleGider();
-                else if(col === 'veresiye') yukleVeresiye();
-                else if(col === 'customers') yukleCari();
-            }
-        }
-
-        async function sifirlaFinans() {
-            if(confirm('Tüm finansal veriler (satış ve giderler) silinecek! Onaylıyor musunuz?')) {
-                await fetch('/api/reset-finance', {method: 'POST'});
-                loadStats();
-                if(document.getElementById('page-fatura').classList.contains('active-section')) yukleFaturalar();
             }
         }
 
         function exportExcel(col) {
             fetch(`/api/${col}`).then(res => res.json()).then(data => {
-                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'text/plain'});
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
                 const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `${col}_yedek.txt`;
-                a.click();
+                const a = document.createElement('a'); a.href = url; a.download = `${col}_yedek.json`; a.click();
             });
-        }
-
-        function triggerImport(type) { 
-            activeImportType = type; 
-            document.getElementById('import-file').click(); 
-        }
-
-        async function processImport(input) {
-            const file = input.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    await fetch(`/api/import/${activeImportType}`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(data)
-                    });
-                    alert("Veriler başarıyla yüklendi.");
-                    location.reload();
-                } catch(err) { alert("Dosya okuma hatası!"); }
-            };
-            reader.readAsText(file);
-            input.value = "";
         }
     </script>
 </body>
