@@ -1,12 +1,11 @@
 from bson.objectid import ObjectId
 
 def stok_guncelle(db, id, miktar):
-    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": miktar}})
+    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": int(miktar)}})
     return {"ok": True}
 
 def parca_duzenle(db, id, data):
-    # Bu fonksiyon stok (miktar) HARİÇ her şeyi günceller.
-    # index.html'den gelen JSON verisindeki anahtarların burada karşılandığından emin oluyoruz.
+    # Kritik Düzeltme: Front-end'den gelen verileri güvenli çekme
     update_data = {
         "name": data.get('name'),
         "code": data.get('code'),
@@ -16,7 +15,9 @@ def parca_duzenle(db, id, data):
         "compat": data.get('compat', '')
     }
     
-    # MongoDB güncelleme işlemi
+    # Boş verileri temizle (opsiyonel ama önerilir)
+    update_data = {k: v for k, v in update_data.items() if v is not None}
+    
     db.products.update_one({"_id": ObjectId(id)}, {"$set": update_data})
     return {"ok": True}
 
@@ -27,7 +28,7 @@ def parca_ekle(db, data):
         "category": data.get('category', 'Genel'),
         "desc": data.get('desc', ''),
         "compat": data.get('compat', ''),
-        "stock": int(data.get('stock', 1)),
+        "stock": int(data.get('stock', 0)),
         "price": data.get('price', "0")
     })
     return {"ok": True}
