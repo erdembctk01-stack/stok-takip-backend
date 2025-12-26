@@ -31,18 +31,18 @@ def handle_generic_api(col):
     db[col].insert_one(data)
     return jsonify({"ok": True})
 
-# YENİ DÜZENLEME ROTASI
-@app.route('/api/products/edit/<id>', methods=['POST'])
-def edit_product(id):
-    return jsonify(stok_yonetimi.parca_duzenle(db, id, request.json))
-
 @app.route('/api/products/update/<id>', methods=['POST'])
 def update_stock(id):
     miktar = request.json.get('miktar', 0)
     return jsonify(stok_yonetimi.stok_guncelle(db, id, miktar))
 
-@app.route('/api/fatura-kes', methods=['POST'])
-def fatura_kes():
+@app.route('/api/products/edit/<id>', methods=['POST'])
+def edit_product(id):
+    data = request.json
+    return jsonify(stok_yonetimi.parca_duzenle(db, id, data))
+
+@app.route('/api/toplu-satis', methods=['POST'])
+def toplu_satis():
     return jsonify(satis_yonetimi.toplu_fatura_kes(db, request.json))
 
 @app.route('/api/import/<col>', methods=['POST'])
@@ -78,8 +78,8 @@ def get_stats():
     kazanc = sum(temizle(i.get('toplam', 0)) for i in invoices)
     gider = sum(temizle(e.get('tutar', 0)) for e in expenses)
     depo = sum(int(p.get('stock', 0)) * temizle(p.get('price', 0)) for p in products)
-    
-    return jsonify({"kazanc": kazanc, "gider": gider, "depo": depo})
+
+    return jsonify({"kazanc": f"₺{kazanc:,.2f}", "gider": f"₺{gider:,.2f}", "depo": f"₺{depo:,.2f}"})
 
 if __name__ == '__main__':
     # Render için kritik düzeltme: Portu çevresel değişkenden al, hostu 0.0.0.0 yap
