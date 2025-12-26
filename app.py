@@ -35,7 +35,7 @@ def handle_generic_api(col):
 def update_stock(id):
     miktar = request.json.get('miktar', 0)
     return jsonify(stok_yonetimi.stok_guncelle(db, id, miktar))
-    
+
 @app.route('/api/products/edit/<id>', methods=['POST'])
 def edit_product(id):
     data = request.json
