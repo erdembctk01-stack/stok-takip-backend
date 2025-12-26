@@ -10,7 +10,14 @@ def parca_ekle(db, data):
         "name": data['name'],
         "code": data.get('code', '-'),
         "category": data.get('category', 'Genel'),
+        "description": data.get('description', '-'), # YENİ: Açıklama
+        "compatible_cars": data.get('compatible_cars', '-'), # YENİ: Uyumlu Arabalar
         "stock": adet,
         "price": data.get('price', "0")
     })
+    return {"ok": True}
+
+# YENİ: Parça detaylarını düzenleme fonksiyonu (opsiyonel ileride kullanman için hazır)
+def parca_duzenle(db, id, data):
+    db.products.update_one({"_id": ObjectId(id)}, {"$set": data})
     return {"ok": True}
