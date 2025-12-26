@@ -42,11 +42,11 @@
                 <input id="pass-in" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-100 rounded-xl outline-none border-2 border-transparent focus:border-orange-500 transition">
                 <div class="flex items-center gap-2 px-2 text-left">
                     <input type="checkbox" id="remember-me" class="w-4 h-4 accent-orange-500">
-                    <label for="remember-me" class="text-xs font-bold text-slate-500 cursor-pointer">10 Gün Beni Hatırla</label>
+                    <label for="remember-me" class="text-xs font-bold text-slate-500 cursor-pointer">Beni Hatırla</label>
                 </div>
                 <button onclick="checkLogin(false)" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl hover:bg-orange-600 transition">GİRİŞ YAP</button>
             </div>
-            <p id="error-msg" class="text-red-500 text-xs mt-4 font-bold hidden italic">Hatalı kullanıcı adı veya şifre!</p>
+            <p id="error-msg" class="text-red-500 text-xs mt-4 font-bold hidden">Hatalı kullanıcı adı veya şifre!</p>
         </div>
     </div>
 
@@ -68,7 +68,7 @@
             </nav>
             <div class="p-4 border-t border-slate-800">
                 <button onclick="logout()" class="w-full flex items-center justify-center p-4 text-xs font-black uppercase bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition group">
-                    <i class="fas fa-sign-out-alt mr-2 group-hover:rotate-180 transition duration-500"></i> Çıkış Yap
+                    <i class="fas fa-sign-out-alt mr-2"></i> Çıkış Yap
                 </button>
             </div>
         </aside>
@@ -77,11 +77,11 @@
             <div id="page-dashboard" class="page-content active-section">
                 <div class="flex justify-between items-center mb-10">
                     <h2 class="text-3xl font-black italic uppercase">Sistem Özeti</h2>
-                    <button onclick="sifirlaFinans()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-2xl font-bold text-xs shadow-lg transition uppercase">
+                    <button onclick="sifirlaFinans()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase shadow-lg transition">
                         <i class="fas fa-sync-alt mr-2"></i> Finans Sıfırla
                     </button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white p-8 rounded-3xl shadow-sm border-l-8 border-emerald-500">
                         <p class="text-xs font-bold text-slate-400 uppercase mb-2">Toplam Kazanç</p>
                         <h3 id="dash-kazanc" class="text-3xl font-black text-emerald-600">₺0,00</h3>
@@ -99,14 +99,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-                    <h3 class="text-lg font-black uppercase mb-4 italic">Hızlı Kategori Oluştur</h3>
-                    <div class="flex gap-4">
-                        <input id="dash-new-cat" type="text" placeholder="Yeni Kategori Adı Yazın..." class="flex-1 p-4 bg-slate-50 rounded-2xl border outline-none focus:border-orange-500 font-bold">
-                        <button onclick="hizliKategoriEkle()" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs hover:bg-orange-600 transition shadow-lg">Oluştur</button>
-                    </div>
-                </div>
             </div>
 
             <div id="page-stok" class="page-content">
@@ -117,9 +109,9 @@
                         <button onclick="triggerImport('products')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
                     </div>
                 </div>
-                
+
                 <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input id="stok-search" type="text" onkeyup="filterStok()" placeholder="Parça adı, kod veya uyumluluk ile ara..." class="p-4 bg-white rounded-2xl border shadow-sm outline-none focus:border-orange-500">
+                    <input id="stok-search" type="text" onkeyup="filterStok()" placeholder="İsim, Kod veya Araç Uyumluluğu Ara..." class="p-4 bg-white rounded-2xl border shadow-sm outline-none focus:border-orange-500">
                     <input id="stok-cat-search" type="text" onkeyup="filterStok()" placeholder="Kategoriye göre filtrele..." class="p-4 bg-white rounded-2xl border shadow-sm outline-none focus:border-orange-500 font-bold text-orange-600">
                 </div>
 
@@ -129,20 +121,20 @@
                         <input id="new-code" type="text" placeholder="Parça Kodu" class="p-3 bg-slate-50 rounded-xl border outline-none">
                         <input id="new-cat" type="text" list="cat-list" placeholder="Kategori" class="p-3 bg-slate-50 rounded-xl border outline-none">
                         <datalist id="cat-list"></datalist>
-                        <input id="new-price" type="text" placeholder="Birim Fiyat" class="p-3 bg-slate-50 rounded-xl border outline-none">
+                        <input id="new-price" type="text" placeholder="Ort. Fiyat" class="p-3 bg-slate-50 rounded-xl border outline-none">
                         <input id="new-stock" type="number" placeholder="Adet" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input id="new-desc" type="text" placeholder="Ürün Açıklaması (Örn: Orijinal Parça, Sıfır)" class="p-3 bg-slate-50 rounded-xl border outline-none">
-                        <input id="new-compat" type="text" placeholder="Uyumlu Araçlar (Örn: Focus 2012, Astra J)" class="p-3 bg-slate-50 rounded-xl border outline-none">
+                        <input id="new-desc" type="text" placeholder="Ürün Açıklaması (Örn: Orijinal Parça, Garantili)" class="p-3 bg-slate-50 rounded-xl border outline-none">
+                        <input id="new-compat" type="text" placeholder="Uyumluluk (Örn: BMW F30, Audi A4 2015-2018)" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     </div>
-                    <button onclick="parcaEkle()" class="w-full bg-slate-900 text-white rounded-xl font-bold uppercase text-xs py-4 hover:bg-orange-600 transition">Parçayı Sisteme Kaydet</button>
+                    <button onclick="parcaEkle()" class="w-full bg-slate-900 text-white rounded-xl font-bold uppercase text-xs py-4 hover:bg-orange-600 transition">Sisteme Kaydet</button>
                 </div>
 
                 <div class="bg-white rounded-3xl shadow-sm border overflow-hidden">
                     <table class="w-full text-left">
                         <thead class="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase">
-                            <tr><th class="p-5">Parça / Detay / Uyumluluk</th><th class="p-5">Kategori</th><th class="p-5">Birim Fiyat</th><th class="p-5 text-center">Stok</th><th class="p-5 text-right">İşlem</th></tr>
+                            <tr><th class="p-5">Detay / Uyumluluk</th><th class="p-5">Kategori</th><th class="p-5">Birim Fiyat</th><th class="p-5 text-center">Stok</th><th class="p-5 text-right">İşlem</th></tr>
                         </thead>
                         <tbody id="stok-list"></tbody>
                     </table>
@@ -151,14 +143,13 @@
 
             <div id="page-fatura" class="page-content">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-black italic uppercase">Satış / Fatura Kaydı</h2>
+                    <h2 class="text-2xl font-black italic uppercase">Satış Yap / Fatura</h2>
                     <button onclick="exportExcel('invoices')" class="bg-green-600 text-white btn-action">Excel Al</button>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="bg-white p-8 rounded-3xl shadow-xl border space-y-4">
                         <input id="fat-ad" type="text" placeholder="Müşteri Adı" class="w-full p-4 bg-slate-50 rounded-xl border outline-none">
                         <input id="fat-tel" type="text" placeholder="Telefon" class="w-full p-4 bg-slate-50 rounded-xl border outline-none">
-                        
                         <div class="bg-orange-50 p-4 rounded-2xl border border-orange-100">
                             <input id="fat-search" list="fat-datalist" placeholder="Parça Ara..." class="w-full p-3 bg-white rounded-xl border outline-none font-bold mb-2">
                             <datalist id="fat-datalist"></datalist>
@@ -168,13 +159,12 @@
                                 <button onclick="sepeteEkle()" class="bg-orange-500 text-white px-4 rounded-xl font-bold text-xs">EKLE</button>
                             </div>
                         </div>
-
                         <div id="sepet-listesi" class="mt-4 max-h-40 overflow-y-auto space-y-1"></div>
                         <div class="pt-4 border-t flex justify-between items-center">
                             <span class="font-bold">Toplam:</span>
                             <span id="sepet-toplam" class="text-xl font-black text-emerald-600">₺0</span>
                         </div>
-                        <button onclick="topluFaturaKes()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl uppercase hover:bg-orange-600 transition">Siparişi Onayla</button>
+                        <button onclick="topluFaturaKes()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl uppercase hover:bg-orange-600 transition">Siparişi Bitir</button>
                     </div>
                     <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border overflow-hidden">
                         <table class="w-full text-left">
@@ -190,32 +180,27 @@
             <div id="page-cari" class="page-content">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-2xl font-black italic uppercase">Cari Rehber</h2>
-                    <div class="flex gap-2">
-                        <button onclick="exportExcel('customers')" class="bg-green-600 text-white btn-action">Rehber Excel İndir</button>
-                        <button onclick="triggerImport('customers')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
-                    </div>
+                    <button onclick="exportExcel('customers')" class="bg-green-600 text-white btn-action">Rehberi Excel Olarak İndir</button>
                 </div>
                 <div id="cari-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
 
             <div id="page-veresiye" class="page-content">
-                 <h2 class="text-2xl font-black italic uppercase mb-6">Veresiye Kayıtları</h2>
-                 <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <input id="ver-ad" type="text" placeholder="İsim Soyisim" class="p-3 bg-slate-50 rounded-xl border">
+                <h2 class="text-2xl font-black italic uppercase mb-6">Veresiye Kaydı</h2>
+                <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <input id="ver-ad" type="text" placeholder="Müşteri Ad" class="p-3 bg-slate-50 rounded-xl border">
                     <input id="ver-tel" type="text" placeholder="Telefon" class="p-3 bg-slate-50 rounded-xl border">
                     <input id="ver-islem" type="text" placeholder="İşlem" class="p-3 bg-slate-50 rounded-xl border">
                     <input id="ver-para" type="text" placeholder="Tutar" class="p-3 bg-slate-50 rounded-xl border">
                     <button onclick="veresiyeEkle()" class="bg-blue-600 text-white rounded-xl font-bold uppercase text-xs">Kaydet</button>
                 </div>
-                <table class="w-full bg-white rounded-3xl overflow-hidden border">
-                    <tbody id="veresiye-list"></tbody>
-                </table>
+                <div id="veresiye-list" class="space-y-2"></div>
             </div>
 
             <div id="page-gider" class="page-content">
-                 <h2 class="text-2xl font-black italic uppercase mb-6">Gider Kayıtları</h2>
-                 <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input id="exp-name" type="text" placeholder="Gider Açıklaması" class="p-3 bg-slate-50 rounded-xl border">
+                <h2 class="text-2xl font-black italic uppercase mb-6">Gider Kaydı</h2>
+                <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input id="exp-name" type="text" placeholder="Açıklama" class="p-3 bg-slate-50 rounded-xl border">
                     <input id="exp-amount" type="text" placeholder="Tutar" class="p-3 bg-slate-50 rounded-xl border">
                     <button onclick="giderEkle()" class="bg-red-600 text-white rounded-xl font-bold uppercase text-xs">Gider Kaydet</button>
                 </div>
@@ -246,7 +231,7 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-layout').style.display = 'flex';
                 showPage('dashboard');
-            } else { alert('Hatalı Giriş!'); }
+            } else { alert('Giriş başarısız!'); }
         }
 
         function logout() { localStorage.removeItem('oto_expiry'); window.location.reload(); }
@@ -264,6 +249,7 @@
             if(pId === 'dashboard') loadStats();
         }
 
+        // --- STOK YÖNETİMİ ---
         async function yukleStok() {
             const res = await fetch('/api/products');
             allProducts = await res.json();
@@ -280,7 +266,7 @@
                         <div class="view-mode">
                             <p class="font-bold uppercase">${i.name}</p>
                             <p class="text-[10px] text-slate-400">Kod: ${i.code}</p>
-                            <p class="text-xs text-blue-600 font-bold italic mt-1">${i.compatibility || 'Uyumluluk Belirtilmemiş'}</p>
+                            <p class="text-xs text-blue-600 font-bold italic mt-1">${i.compatibility || 'Tüm araçlar'}</p>
                             <p class="text-[10px] text-slate-500 italic">${i.description || ''}</p>
                         </div>
                         <div class="edit-mode hidden space-y-1">
@@ -321,7 +307,7 @@
                 description: document.getElementById('new-desc').value,
                 compatibility: document.getElementById('new-compat').value
             };
-            if(!data.name) return alert("Ad gerekli!");
+            if(!data.name) return alert("Parça adı gereklidir!");
             await fetch('/api/products', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
             yukleStok();
             document.querySelectorAll('#page-stok input').forEach(i => i.value = "");
@@ -352,24 +338,59 @@
         }
 
         function filterStok() {
-            const search = document.getElementById('stok-search').value.toLowerCase();
-            const cat = document.getElementById('stok-cat-search').value.toLowerCase();
-            const filtered = allProducts.filter(p => 
-                (p.name.toLowerCase().includes(search) || p.code.toLowerCase().includes(search) || (p.compatibility && p.compatibility.toLowerCase().includes(search))) &&
-                (p.category.toLowerCase().includes(cat))
+            const s = document.getElementById('stok-search').value.toLowerCase();
+            const c = document.getElementById('stok-cat-search').value.toLowerCase();
+            const f = allProducts.filter(p => 
+                (p.name.toLowerCase().includes(s) || p.code.toLowerCase().includes(s) || (p.compatibility && p.compatibility.toLowerCase().includes(s))) &&
+                (p.category.toLowerCase().includes(c))
             );
-            renderStokTable(filtered);
+            renderStokTable(f);
         }
 
-        // --- CARİ VE EXCEL İŞLEMLERİ ---
+        // --- SATIŞ VE SEPET ---
+        function sepeteEkle() {
+            const inputVal = document.getElementById('fat-search').value;
+            const p = allProducts.find(x => `${x.name} (${x.code})` === inputVal);
+            const adet = parseInt(document.getElementById('fat-adet').value) || 1;
+            const fiyat = document.getElementById('fat-fiyat').value;
+            if(!p || !fiyat) return alert("Ürün seçimi veya fiyat hatalı!");
+            sepet.push({ parcaId: p._id, parca_ad: p.name, adet: adet, fiyat: fiyat, toplam: parseFloat(fiyat) * adet });
+            renderSepet();
+        }
+
+        function renderSepet() {
+            let total = 0;
+            document.getElementById('sepet-listesi').innerHTML = sepet.map((x, i) => {
+                total += x.toplam;
+                return `<div class="basket-item text-xs"><span>${x.parca_ad} x ${x.adet}</span><b>₺${x.toplam}</b></div>`;
+            }).join('');
+            document.getElementById('sepet-toplam').innerText = "₺" + total;
+        }
+
+        async function topluFaturaKes() {
+            const ad = document.getElementById('fat-ad').value;
+            const tel = document.getElementById('fat-tel').value;
+            if(!ad || sepet.length === 0) return alert("Müşteri adı ve ürün gereklidir!");
+            for(let item of sepet) {
+                await fetch('/api/fatura-kes', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...item, ad, tel, tarih: new Date().toLocaleString()})});
+            }
+            alert("Satış Kaydedildi!");
+            sepet = []; renderSepet();
+            document.getElementById('fat-ad').value = ""; document.getElementById('fat-tel').value = "";
+            showPage('fatura');
+        }
+
+        async function yukleFaturalar() {
+            const res = await fetch('/api/invoices');
+            const data = await res.json();
+            document.getElementById('fatura-list').innerHTML = data.map(f => `<tr><td class="p-4"><b>${f.ad}</b><br><small>${f.tarih}</small></td><td class="p-4">${f.parca_ad} x ${f.adet}</td><td class="p-4 font-bold">₺${f.toplam}</td><td class="p-4 text-right"><button onclick="sil('${f._id}', 'invoices')" class="text-slate-300"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        }
+
+        // --- CARİ VE EXCEL ---
         async function yukleCari() {
             const res = await fetch('/api/customers');
             const data = await res.json();
-            document.getElementById('cari-list').innerHTML = data.map(c => `
-                <div class="bg-white p-5 rounded-2xl border flex justify-between items-center">
-                    <div><h4 class="font-black uppercase">${c.ad}</h4><p class="text-xs">${c.tel}</p></div>
-                    <button onclick="sil('${c._id}', 'customers')" class="text-red-400 hover:text-red-600"><i class="fas fa-user-minus"></i></button>
-                </div>`).join('');
+            document.getElementById('cari-list').innerHTML = data.map(c => `<div class="bg-white p-5 rounded-2xl border flex justify-between items-center"><div><h4 class="font-black">${c.ad}</h4><p class="text-xs">${c.tel}</p></div><button onclick="sil('${c._id}', 'customers')" class="text-red-400"><i class="fas fa-user-minus"></i></button></div>`).join('');
         }
 
         async function exportExcel(api) {
@@ -382,6 +403,9 @@
             } else if(api === 'customers') {
                 csv += "Müşteri Adı;Telefon\n";
                 data.forEach(i => csv += `${i.ad};${i.tel}\n`);
+            } else if(api === 'invoices') {
+                csv += "Müşteri;Parça;Adet;Toplam;Tarih\n";
+                data.forEach(i => csv += `${i.ad};${i.parca_ad};${i.adet};${i.toplam};${i.tarih}\n`);
             }
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
@@ -390,41 +414,29 @@
             link.click();
         }
 
-        async function sil(id, col) {
-            if(confirm('Veri kalıcı olarak silinecek, emin misiniz?')) {
-                await fetch(`/api/${col}/${id}`, {method: 'DELETE'});
-                showPage(col === 'products' ? 'stok' : (col === 'customers' ? 'cari' : (col === 'invoices' ? 'fatura' : 'dashboard')));
-            }
+        // --- VERESİYE, GİDER VE STATS ---
+        async function veresiyeEkle() {
+            const d = { ad: document.getElementById('ver-ad').value, tel: document.getElementById('ver-tel').value, islem: document.getElementById('ver-islem').value, para: document.getElementById('ver-para').value };
+            await fetch('/api/veresiye', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d)});
+            yukleVeresiye();
         }
 
-        // Diğer Fonksiyonlar (Sepet, Fatura vb. Mevcut özellikler aynen korunmuştur)
-        function sepeteEkle() {
-            const s = document.getElementById('fat-search').value;
-            const p = allProducts.find(x => `${x.name} (${x.code})` === s);
-            const adet = parseInt(document.getElementById('fat-adet').value);
-            const fiyat = document.getElementById('fat-fiyat').value;
-            if(!p || !fiyat) return alert("Hata!");
-            sepet.push({ parcaId: p._id, parca_ad: p.name, adet: adet, fiyat: fiyat, toplam: parseFloat(fiyat) * adet });
-            renderSepet();
+        async function yukleVeresiye() {
+            const res = await fetch('/api/veresiye');
+            const data = await res.json();
+            document.getElementById('veresiye-list').innerHTML = data.map(v => `<div class="bg-white p-4 rounded-xl border flex justify-between items-center"><div><b>${v.ad}</b> - ${v.islem}</div><div class="font-bold text-red-600">₺${v.para}</div></div>`).join('');
         }
 
-        function renderSepet() {
-            let t = 0;
-            document.getElementById('sepet-listesi').innerHTML = sepet.map((x, i) => {
-                t += x.toplam;
-                return `<div class="basket-item text-xs"><span>${x.parca_ad} x ${x.adet}</span><b>₺${x.toplam}</b></div>`;
-            }).join('');
-            document.getElementById('sepet-toplam').innerText = "₺" + t;
+        async function giderEkle() {
+            const d = { aciklama: document.getElementById('exp-name').value, tutar: document.getElementById('exp-amount').value };
+            await fetch('/api/expenses', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(d)});
+            yukleGider();
         }
 
-        async function topluFaturaKes() {
-            const ad = document.getElementById('fat-ad').value;
-            const tel = document.getElementById('fat-tel').value;
-            for(let item of sepet) {
-                await fetch('/api/fatura-kes', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({...item, ad, tel, tarih: new Date().toLocaleString()})});
-            }
-            alert("Satış Kaydedildi!");
-            sepet = []; renderSepet(); showPage('fatura');
+        async function yukleGider() {
+            const res = await fetch('/api/expenses');
+            const data = await res.json();
+            document.getElementById('gider-list').innerHTML = data.map(g => `<div class="bg-white p-4 rounded-xl border flex justify-between items-center"><div>${g.aciklama}</div><div class="font-bold">₺${g.tutar}</div></div>`).join('');
         }
 
         async function loadStats() {
@@ -434,8 +446,30 @@
             document.getElementById('dash-gider').innerText = "₺" + data.gider.toLocaleString();
         }
 
+        async function sil(id, col) {
+            if(confirm('Silinecek, emin misiniz?')) {
+                await fetch(`/api/${col}/${id}`, {method: 'DELETE'});
+                showPage(col === 'products' ? 'stok' : (col === 'invoices' ? 'fatura' : col));
+            }
+        }
+
         function triggerImport(api) { activeImportType = api; document.getElementById('import-file').click(); }
-        // Process Import ve diğer alt fonksiyonlar...
+        async function processImport(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const lines = e.target.result.split('\n').slice(1);
+                for(let line of lines) {
+                    if(!line.trim()) continue;
+                    const parts = line.split(';');
+                    let d = activeImportType === 'products' ? {name:parts[0], code:parts[1], category:parts[2], price:parts[3], stock:parts[4], description:parts[5], compatibility:parts[6]} : {ad:parts[0], tel:parts[1]};
+                    await fetch(`/api/${activeImportType}`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d)});
+                }
+                alert('Yükleme Tamam!');
+                showPage(activeImportType === 'products' ? 'stok' : 'cari');
+            };
+            reader.readAsText(file);
+        }
     </script>
 </body>
 </html>
