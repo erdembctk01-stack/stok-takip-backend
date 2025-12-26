@@ -121,11 +121,11 @@
 
                 <div class="bg-orange-50 p-6 rounded-3xl border border-orange-200 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="text-[10px] font-black uppercase text-orange-600 ml-2">Parça Adı veya Kod İle Ara</label>
-                        <input type="text" id="stok-arama-input" onkeyup="stokFiltrele()" placeholder="Örn: Balata, Filtre veya 001..." class="w-full p-4 bg-white rounded-2xl border-2 border-transparent focus:border-orange-500 outline-none font-bold shadow-sm">
+                        <label class="text-[10px] font-black uppercase text-orange-600 ml-2">İsim veya Kod Ara</label>
+                        <input type="text" id="stok-arama-input" onkeyup="stokFiltrele()" placeholder="Örn: Balata, Filtre, 001..." class="w-full p-4 bg-white rounded-2xl border-2 border-transparent focus:border-orange-500 outline-none font-bold shadow-sm">
                     </div>
                     <div>
-                        <label class="text-[10px] font-black uppercase text-orange-600 ml-2">Kategoriye Göre Süz</label>
+                        <label class="text-[10px] font-black uppercase text-orange-600 ml-2">Kategori Süz</label>
                         <select id="stok-kategori-filtre" onchange="stokFiltrele()" class="w-full p-4 bg-white rounded-2xl border-2 border-transparent focus:border-orange-500 outline-none font-bold shadow-sm">
                             <option value="">TÜM KATEGORİLER</option>
                         </select>
@@ -143,7 +143,6 @@
                     <input id="new-stock" type="number" placeholder="Adet" class="p-3 bg-slate-50 rounded-xl border outline-none">
                     <button onclick="parcaEkle()" class="bg-slate-900 text-white rounded-xl font-bold uppercase text-xs md:col-span-4 py-3">Parça Kaydet</button>
                 </div>
-
                 <div class="bg-white rounded-3xl shadow-sm border overflow-hidden">
                     <table class="w-full text-left">
                         <thead class="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase">
@@ -291,7 +290,37 @@
             if(p === 'dashboard') loadStats();
         }
 
-        // KATEGORİ VE STOK FİLTRELEME (YENİ)
+        function hizliKategoriEkle() {
+            const yeniCat = document.getElementById('dash-new-cat').value;
+            if(!yeniCat) return;
+            kategoriler.push(yeniCat);
+            updateCatList();
+            document.getElementById('dash-new-cat').value = "";
+            alert("Kategori eklendi: " + yeniCat);
+        }
+
+        function updateCatList() {
+            const list = document.getElementById('cat-list');
+            if(list) list.innerHTML = kategoriler.map(c => `<option value="${c}">`).join('');
+            
+            const filterSelect = document.getElementById('stok-kategori-filtre');
+            if(filterSelect) {
+                const current = filterSelect.value;
+                filterSelect.innerHTML = '<option value="">TÜM KATEGORİLER</option>' + 
+                    kategoriler.map(c => `<option value="${c}" ${c===current?'selected':''}>${c.toUpperCase()}</option>`).join('');
+            }
+        }
+
+        async function yukleStok() {
+            const res = await fetch('/api/products');
+            allProducts = await res.json();
+            const existingCats = [...new Set(allProducts.map(p => p.category))];
+            kategoriler = [...new Set([...kategoriler, ...existingCats])];
+            updateCatList();
+            stokFiltrele(); // Tabloyu filtreleyerek render et
+            renderParcaSelect(allProducts);
+        }
+
         function stokFiltrele() {
             const term = document.getElementById('stok-arama-input').value.toLowerCase();
             const cat = document.getElementById('stok-kategori-filtre').value;
@@ -302,27 +331,6 @@
                 return matchesTerm && matchesCat;
             });
             renderStokTable(filtered);
-        }
-
-        function updateCatList() {
-            const list = document.getElementById('cat-list');
-            const filterSelect = document.getElementById('stok-kategori-filtre');
-            
-            if(list) list.innerHTML = kategoriler.map(c => `<option value="${c}">`).join('');
-            if(filterSelect) {
-                const currentVal = filterSelect.value;
-                filterSelect.innerHTML = '<option value="">TÜM KATEGORİLER</option>' + 
-                    kategoriler.map(c => `<option value="${c}" ${c === currentVal ? 'selected' : ''}>${c.toUpperCase()}</option>`).join('');
-            }
-        }
-
-        async function yukleStok() {
-            const res = await fetch('/api/products');
-            allProducts = await res.json();
-            kategoriler = [...new Set(allProducts.map(p => p.category))];
-            updateCatList();
-            renderStokTable(allProducts);
-            renderParcaSelect(allProducts);
         }
 
         function renderStokTable(data) {
@@ -343,7 +351,7 @@
                         </div>
                     </td>
                     <td class="p-5 text-right flex gap-2 justify-end">
-                        <button onclick='parcaDuzenlePencere(${JSON.stringify(i)})' class="bg-blue-50 text-blue-600 p-2 rounded-lg hover:bg-blue-600 hover:text-white transition"><i class="fas fa-edit"></i></button>
+                        <button onclick='parcaDuzenlePencere(${JSON.stringify(i)})' class="text-blue-500 p-2"><i class="fas fa-edit"></i></button>
                         <button onclick="sil('${i._id}', 'products')" class="text-slate-300 hover:text-red-500 p-2"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`).join('');
@@ -365,15 +373,6 @@
             yukleStok();
         }
 
-        async function stokHizliGuncelle(id, miktar) {
-            await fetch(`/api/products/update/${id}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({miktar})
-            });
-            yukleStok();
-        }
-
         async function parcaEkle() {
             const data = { 
                 name: document.getElementById('new-name').value, 
@@ -384,13 +383,13 @@
                 price: document.getElementById('new-price').value, 
                 stock: document.getElementById('new-stock').value 
             };
-            if(!data.name) return alert("Parça adı boş olamaz!");
+            if(!data.name) return alert("İsim gerekli!");
             await fetch('/api/products', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
             yukleStok();
             document.querySelectorAll('#page-stok input').forEach(inp => inp.value = "");
         }
 
-        // SATIŞ FONKSİYONLARI
+        // Diğer fonksiyonlar (Satis, Veresiye vb.) aynen devam eder...
         function renderParcaSelect(data) {
             if(document.getElementById('fat-parca')) {
                 document.getElementById('fat-parca').innerHTML = data.map(i => 
@@ -453,7 +452,6 @@
                 <td class="p-4 text-right"><button onclick="sil('${f._id}', 'invoices')" class="text-slate-300"><i class="fas fa-times"></i></button></td></tr>`).join('');
         }
 
-        // VERESİYE, GİDER, CARİ...
         async function veresiyeEkle() {
             const data = { ad: document.getElementById('ver-ad').value, tel: document.getElementById('ver-tel').value, islem: document.getElementById('ver-islem').value, para: document.getElementById('ver-para').value };
             await fetch('/api/veresiye', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
@@ -511,7 +509,7 @@
         }
 
         async function sifirlaFinans() {
-            if(confirm('Tüm finansal veriler silinecek! Onaylıyor musunuz?')) {
+            if(confirm('Tüm finansal veriler (satış ve giderler) silinecek! Onaylıyor musunuz?')) {
                 await fetch('/api/reset-finance', {method: 'POST'});
                 loadStats();
                 if(document.getElementById('page-fatura').classList.contains('active-section')) yukleFaturalar();
@@ -528,7 +526,11 @@
             });
         }
 
-        function triggerImport(type) { activeImportType = type; document.getElementById('import-file').click(); }
+        function triggerImport(type) { 
+            activeImportType = type; 
+            document.getElementById('import-file').click(); 
+        }
+
         async function processImport(input) {
             const file = input.files[0];
             if(!file) return;
@@ -541,10 +543,12 @@
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(data)
                     });
+                    alert("Veriler başarıyla yüklendi.");
                     location.reload();
-                } catch(err) { alert("Hata!"); }
+                } catch(err) { alert("Dosya okuma hatası!"); }
             };
             reader.readAsText(file);
+            input.value = "";
         }
     </script>
 </body>
