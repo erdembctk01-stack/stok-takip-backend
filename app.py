@@ -9,7 +9,6 @@ import satis_yonetimi
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
-# MongoDB Bağlantısı
 MONGO_URI = "mongodb+srv://erdembctk01_db_user:Dyta96252@cluster0.o27rfmv.mongodb.net/stok_veritabani?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)
 db = client.stok_veritabani
@@ -18,7 +17,6 @@ db = client.stok_veritabani
 def index():
     return render_template('index.html')
 
-# Genel API İşlemleri (Ürün çekme, Ekleme)
 @app.route('/api/<col>', methods=['GET', 'POST'])
 def handle_generic_api(col):
     if request.method == 'GET':
@@ -28,43 +26,39 @@ def handle_generic_api(col):
     
     data = request.json
     if col == 'products':
-        return jsonify(stok_yonetimi.parca_ekle(db, data)) #
+        return jsonify(stok_yonetimi.parca_ekle(db, data))
     
     db[col].insert_one(data)
     return jsonify({"ok": True})
 
-# Ürün Düzenleme (Açıklama ve Uyumluluk İçin)
+@app.route('/api/import/<col>', methods=['POST'])
+def import_data(col):
+    data_list = request.json
+    if isinstance(data_list, list):
+        for item in data_list:
+            if '_id' in item: del item['_id']
+            db[col].insert_one(item)
+    return jsonify({"ok": True})
+
 @app.route('/api/products/edit/<id>', methods=['POST'])
 def edit_product(id):
     data = request.json
-    db.products.update_one({"_id": ObjectId(id)}, {"$set": data}) #
-    return jsonify({"ok": True})
+    return jsonify(stok_yonetimi.parca_duzenle(db, id, data))
 
-# Finansal Verileri Sıfırlama
-@app.route('/api/reset-finance', methods=['POST'])
-def reset_finance():
-    db.invoices.delete_many({}) 
-    db.expenses.delete_many({}) 
-    return jsonify({"ok": True}) #
-
-# Hızlı Stok Arttırma / Azaltma
 @app.route('/api/products/update/<id>', methods=['POST'])
 def update_stock(id):
     miktar = request.json.get('miktar', 0)
-    return jsonify(stok_yonetimi.stok_guncelle(db, id, miktar)) #
+    return jsonify(stok_yonetimi.stok_guncelle(db, id, miktar))
 
-# Satış Yapma
 @app.route('/api/fatura-kes', methods=['POST'])
 def post_fatura():
-    return jsonify(satis_yonetimi.fatura_kes(db, request.json)) #
+    return jsonify(satis_yonetimi.fatura_kes(db, request.json))
 
-# Veri Silme
 @app.route('/api/<col>/<id>', methods=['DELETE'])
 def handle_delete(col, id):
     db[col].delete_one({"_id": ObjectId(id)})
-    return jsonify({"ok": True}) #
+    return jsonify({"ok": True})
 
-# Dashboard İstatistikleri
 @app.route('/api/dashboard-stats', methods=['GET'])
 def get_stats():
     invoices = list(db.invoices.find())
@@ -73,23 +67,24 @@ def get_stats():
     
     def temizle(val):
         if val is None or val == "": return 0.0
-        if isinstance(val, (int, float)): return float(val)
-        try:
-            s = str(val).replace('₺', '').replace(' ', '').replace('.', '').replace(',', '.')
-            return float(s)
-        except:
-            return 0.0
+        try: return float(str(val).replace('₺', '').replace(' ', '').replace(',', '.'))
+        except: return 0.0
 
-    toplam_kazanc = sum(temizle(i.get('toplam', 0)) for i in invoices)
-    toplam_gider = sum(temizle(e.get('tutar', 0)) for e in expenses)
-    depo_degeri = sum(int(p.get('stock', 0) if p.get('stock') else 0) * temizle(p.get('price', 0)) for p in products)
-    
+    kazanc = sum(temizle(i.get('toplam', 0)) for i in invoices)
+    gider = sum(temizle(e.get('tutar', 0)) for e in expenses)
+    stok_deger = sum(temizle(p.get('price', 0)) * int(p.get('stock', 0)) for p in products)
+
     return jsonify({
-        "kazanc": f"₺{toplam_kazanc:,.2f}",
-        "gider": f"₺{toplam_gider:,.2f}",
-        "depo": f"₺{depo_degeri:,.2f}"
-    }) #
+        "kazanc": f"₺{kazanc:,.2f}",
+        "gider": f"₺{gider:,.2f}",
+        "depo": f"₺{stok_deger:,.2f}"
+    })
+
+@app.route('/api/reset-finance', methods=['POST'])
+def reset_finance():
+    db.invoices.delete_many({})
+    db.expenses.delete_many({})
+    return jsonify({"ok": True})
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True, port=5000)
