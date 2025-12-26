@@ -228,7 +228,6 @@
         let sepet = [];
         let activeImportType = "";
 
-        // LOGIN KONTROLLERİ
         window.onload = () => {
             const savedExpiry = localStorage.getItem('oto_expiry');
             const hasAccount = localStorage.getItem('has_account');
@@ -255,7 +254,6 @@
 
         function logout() { localStorage.clear(); window.location.reload(); }
 
-        // SAYFA YÖNETİMİ
         function showPage(p) {
             document.querySelectorAll('.page-content').forEach(s => s.classList.remove('active-section'));
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('sidebar-active'));
@@ -270,7 +268,6 @@
             if(p === 'dashboard') loadStats();
         }
 
-        // STOK İŞLEMLERİ
         async function yukleStok() {
             const res = await fetch('/api/products');
             allProducts = await res.json();
@@ -355,7 +352,6 @@
             document.querySelectorAll('#page-stok input').forEach(i => i.value = "");
         }
 
-        // SATIŞ İŞLEMLERİ
         function renderParcaSelect(data) {
             const select = document.getElementById('fat-parca');
             select.innerHTML = '<option value="">Parça Seçin...</option>' + data.map(i => `<option value="${i._id}">${i.name} (${i.stock} Adet)</option>`).join('');
@@ -430,7 +426,6 @@
                 </tr>`).join('');
         }
 
-        // VERESİYE İŞLEMLERİ
         async function veresiyeEkle() {
             const data = { 
                 ad: document.getElementById('ver-ad').value, 
@@ -458,7 +453,6 @@
                 </tr>`).join('');
         }
 
-        // GİDER İŞLEMLERİ
         async function giderEkle() {
             const data = { aciklama: document.getElementById('exp-name').value, tutar: document.getElementById('exp-amount').value };
             if(!data.aciklama || !data.tutar) return;
@@ -481,7 +475,6 @@
                 </div>`).join('');
         }
 
-        // CARİ REHBER
         async function yukleCari() {
             const res = await fetch('/api/customers');
             const data = await res.json();
@@ -495,7 +488,6 @@
                 </div>`).join('');
         }
 
-        // FİNANSAL İSTATİSTİKLER
         async function loadStats() {
             const res = await fetch('/api/dashboard-stats');
             const stats = await res.json();
