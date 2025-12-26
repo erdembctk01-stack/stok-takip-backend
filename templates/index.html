@@ -550,6 +550,40 @@
             reader.readAsText(file);
             input.value = "";
         }
+        function duzenleModaliAc(id, parca) {
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-name').value = parca.name;
+    document.getElementById('edit-code').value = parca.code  '';
+    document.getElementById('edit-cat').value = parca.category;
+    document.getElementById('edit-price').value = parca.price;
+    document.getElementById('edit-desc').value = parca.desc  '';
+    document.getElementById('edit-compat').value = parca.compat || '';
+    document.getElementById('edit-modal').style.display = 'flex';
+}
+
+async function kaydetDuzenleme() {
+    const id = document.getElementById('edit-id').value;
+    const data = {
+        name: document.getElementById('edit-name').value,
+        code: document.getElementById('edit-code').value,
+        category: document.getElementById('edit-cat').value,
+        price: document.getElementById('edit-price').value,
+        desc: document.getElementById('edit-desc').value,
+        compat: document.getElementById('edit-compat').value
+    };
+
+    const res = await fetch(/api/products/edit/${id}, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+
+    if (res.ok) {
+        alert("Parça başarıyla güncellendi.");
+        document.getElementById('edit-modal').style.display = 'none';
+        yukleDepo(); // Listeyi yenile
+    }
+}
     </script>
     <div id="edit-modal" class="modal-overlay" style="display:none;">
     <div class="modal">
