@@ -5,7 +5,7 @@ def stok_guncelle(db, id, miktar):
     return {"ok": True}
 
 def parca_duzenle(db, id, data):
-    # Stok (miktar) HARİÇ her şeyi günceller
+    # Bu fonksiyon stok (miktar) HARİÇ diğer bilgileri (Fiyat dahil) günceller.
     update_data = {
         "name": data.get('name'),
         "code": data.get('code'),
