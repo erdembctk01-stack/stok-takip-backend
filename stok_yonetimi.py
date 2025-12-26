@@ -1,16 +1,11 @@
 from bson.objectid import ObjectId
 
-def stok_guncelle(db, id, miktar):
-    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": miktar}})
-    return {"ok": True}
-
 def parca_ekle(db, data):
-    adet = int(data.get('stock')) if data.get('stock') and str(data.get('stock')).strip() != "" else 1
     db.products.insert_one({
         "name": data['name'],
         "code": data.get('code', '-'),
         "category": data.get('category', 'Genel'),
-        "stock": adet,
+        "stock": int(data.get('stock', 1)),
         "price": data.get('price', "0"),
         "description": data.get('description', ""),
         "compatible_cars": data.get('compatible_cars', "")
@@ -28,4 +23,8 @@ def parca_duzenle(db, id, data):
         "compatible_cars": data.get('compatible_cars')
     }
     db.products.update_one({"_id": ObjectId(id)}, {"$set": update_data})
+    return {"ok": True}
+
+def stok_guncelle(db, id, miktar):
+    db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": miktar}})
     return {"ok": True}
