@@ -8,7 +8,6 @@ from bson.objectid import ObjectId
 
 def parca_duzenle(db, id, data):
     guncellenecek = {}
-
     if "name" in data:
         guncellenecek["name"] = data["name"]
     if "code" in data:
