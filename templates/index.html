@@ -20,7 +20,6 @@
         #remembered-account { display: none; cursor: pointer; border: 2px solid #e2e8f0; padding: 15px; border-radius: 20px; transition: 0.3s; margin-bottom: 20px; }
         #remembered-account:hover { border-color: #f97316; background: #fff7ed; }
         .cart-item { border-bottom: 1px solid #e2e8f0; padding: 10px 0; }
-        /* Yeni Modal Stili */
         #edit-modal { z-index: 10001; }
     </style>
 </head>
@@ -105,10 +104,12 @@
                 </div>
                 <div class="bg-white p-8 rounded-3xl shadow-sm border">
                     <h3 class="font-black uppercase italic mb-4">Hızlı Kategori Yönetimi</h3>
-                    <div class="flex gap-4">
+                    <div class="flex gap-4 mb-4">
                         <input id="dash-new-cat" type="text" placeholder="Yeni Kategori Adı" class="flex-1 p-4 bg-slate-50 rounded-xl border outline-none font-bold">
                         <button onclick="hizliKategoriEkle()" class="bg-slate-900 text-white px-8 rounded-xl font-bold uppercase text-xs">Kategoriyi Sisteme Ekle</button>
                     </div>
+                    <div id="kategori-yonetim-listesi" class="flex flex-wrap gap-2 pt-4 border-t">
+                        </div>
                 </div>
             </div>
 
@@ -194,7 +195,13 @@
             </div>
 
             <div id="page-veresiye" class="page-content">
-                <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-black italic uppercase">Veresiye Kaydı</h2></div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-black italic uppercase">Veresiye Kaydı</h2>
+                    <div class="flex gap-2">
+                        <button onclick="exportExcel('veresiye')" class="bg-green-600 text-white btn-action">Excel Al</button>
+                        <button onclick="triggerImport('veresiye')" class="bg-blue-600 text-white btn-action">Geri Yükle</button>
+                    </div>
+                </div>
                 <div class="bg-white p-6 rounded-3xl shadow-lg border mb-8 grid grid-cols-1 md:grid-cols-5 gap-4">
                     <input id="ver-ad" type="text" placeholder="Müşteri" class="p-3 bg-slate-50 rounded-xl border outline-none font-bold text-sm uppercase">
                     <input id="ver-tel" type="text" placeholder="Telefon" class="p-3 bg-slate-50 rounded-xl border outline-none text-sm">
@@ -285,22 +292,21 @@
         function checkLogin(isRemembered) {
             const user = isRemembered ? 'ozcanoto' : document.getElementById('user-in').value;
             const pass = isRemembered ? 'eren9013' : document.getElementById('pass-in').value;
-            
             if(user === 'ozcanoto' && pass === 'eren9013') {
                 localStorage.setItem('has_account', 'true');
                 if(!isRemembered && document.getElementById('remember-me').checked) { 
-                    localStorage.setItem('oto_expiry', new Date().getTime() + (20 * 24 * 60 * 60 * 1000)); 
+                    localStorage.setItem('oto_expiry', new Date().getTime() + (20 * 24 * 60 * 60 * 1000));
                 }
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-layout').style.display = 'flex';
                 showPage('dashboard');
             } else { 
-                document.getElementById('error-msg').classList.remove('hidden'); 
+                document.getElementById('error-msg').classList.remove('hidden');
             }
         }
 
         function logout() { 
-            localStorage.removeItem('oto_expiry'); 
+            localStorage.removeItem('oto_expiry');
             window.location.reload(); 
         }
 
@@ -314,16 +320,43 @@
             if(p === 'veresiye') yukleVeresiye();
             if(p === 'cari') yukleCari();
             if(p === 'gider') yukleGider();
-            if(p === 'dashboard') loadStats();
+            if(p === 'dashboard') { loadStats(); renderKategoriYonetim(); }
         }
 
         function hizliKategoriEkle() {
-            const yeniCat = document.getElementById('dash-new-cat').value;
+            const yeniCat = document.getElementById('dash-new-cat').value.trim();
             if(!yeniCat) return;
-            kategoriler.push(yeniCat);
-            updateCatList();
-            document.getElementById('dash-new-cat').value = "";
-            alert("Kategori eklendi: " + yeniCat);
+            if(!kategoriler.includes(yeniCat)) {
+                kategoriler.push(yeniCat);
+                updateCatList();
+                renderKategoriYonetim();
+                document.getElementById('dash-new-cat').value = "";
+                alert("Kategori eklendi: " + yeniCat);
+            } else {
+                alert("Bu kategori zaten mevcut!");
+            }
+        }
+
+        function kategoriSil(catName) {
+            if(confirm(`"${catName}" kategorisini silmek istediğinize emin misiniz?`)) {
+                kategoriler = kategoriler.filter(c => c !== catName);
+                updateCatList();
+                renderKategoriYonetim();
+            }
+        }
+
+        function renderKategoriYonetim() {
+            const liste = document.getElementById('kategori-yonetim-listesi');
+            if(liste) {
+                liste.innerHTML = kategoriler.map(c => `
+                    <div class="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-lg border">
+                        <span class="text-xs font-bold uppercase">${c}</span>
+                        <button onclick="kategoriSil('${c}')" class="text-red-500 hover:text-red-700 ml-2">
+                            <i class="fas fa-trash-alt text-[10px]"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
         }
 
         function updateCatList() {
@@ -557,7 +590,8 @@
             fetch(`/api/${col}`).then(res => res.json()).then(data => {
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'text/plain'});
                 const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = `${col}_yedek.txt`; a.click();
+                const a = document.createElement('a'); 
+                a.href = url; a.download = `${col}_yedek.txt`; a.click();
             });
         }
 
