@@ -550,6 +550,18 @@
             reader.readAsText(file);
             input.value = "";
         }
-    </script>
+    <input type="text" id="search" placeholder="Ürün / Kategori Ara..." onkeyup="ara()" />
+
+<script>
+function ara() {
+    const q = document.getElementById("search").value;
+
+    fetch(/api/products?q=${q})
+        .then(r => r.json())
+        .then(data => {
+            console.log(data); // buraya tablo basılacak
+        });
+}
+</script>
 </body>
 </html>
