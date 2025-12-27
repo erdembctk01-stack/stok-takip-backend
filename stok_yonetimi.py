@@ -4,16 +4,39 @@ def stok_guncelle(db, id, miktar):
     db.products.update_one({"_id": ObjectId(id)}, {"$inc": {"stock": miktar}})
     return {"ok": True}
 
+from bson.objectid import ObjectId
+
 def parca_duzenle(db, id, data):
-    # Stok (miktar) HARİÇ her şeyi (Fiyat dahil) günceller
-    update_data = {
-        "name": data.get('name'),
-        "code": data.get('code'),
-        "category": data.get('category'),
-        "price": data.get('price'),
-        "desc": data.get('desc', ''),
-        "compat": data.get('compat', '')
-    }
+    guncellenecek = {}
+
+    if "name" in data:
+        guncellenecek["name"] = data["name"]
+
+    if "code" in data:
+        guncellenecek["code"] = data["code"]
+
+    if "category" in data:
+        guncellenecek["category"] = data["category"]
+
+    if "price" in data:
+        guncellenecek["price"] = float(data["price"])
+
+    if "desc" in data:
+        guncellenecek["desc"] = data["desc"]
+
+    if "compat" in data:
+        guncellenecek["compat"] = data["compat"]
+
+    if not guncellenecek:
+        return {"ok": False, "msg": "Güncellenecek veri yok"}
+
+    db.products.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": guncellenecek}
+    )
+
+    return {"ok": True}
+    
     db.products.update_one({"_id": ObjectId(id)}, {"$set": update_data})
     return {"ok": True}
 
