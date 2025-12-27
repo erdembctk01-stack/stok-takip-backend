@@ -11,19 +11,14 @@ def parca_duzenle(db, id, data):
 
     if "name" in data:
         guncellenecek["name"] = data["name"]
-
     if "code" in data:
         guncellenecek["code"] = data["code"]
-
     if "category" in data:
         guncellenecek["category"] = data["category"]
-
     if "price" in data:
         guncellenecek["price"] = float(data["price"])
-
     if "desc" in data:
         guncellenecek["desc"] = data["desc"]
-
     if "compat" in data:
         guncellenecek["compat"] = data["compat"]
 
