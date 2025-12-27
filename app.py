@@ -16,27 +16,9 @@ db = client.stok_veritabani
 @app.route('/')
 def index():
     return render_template('index.html')
-    
-app.route('/api/products', methods=['GET'])
-def get_products():
-    q = request.args.get('q', '').strip()
 
-    query = {}
-    if q:
-        query = {
-            "$or": [
-                {"name": {"$regex": q, "$options": "i"}},
-                {"category": {"$regex": q, "$options": "i"}},
-                {"code": {"$regex": q, "$options": "i"}}
-            ]
-        }
-
-    products = list(db.products.find(query).sort("_id", -1))
-    for p in products:
-        p["_id"] = str(p["_id"])
-
-    return jsonify(products)
-    
+@app.route('/api/<col>', methods=['GET', 'POST'])
+def handle_generic_api(col):
     if request.method == 'GET':
         items = list(db[col].find().sort('_id', -1))
         for i in items: i['_id'] = str(i['_id'])
