@@ -17,9 +17,6 @@ db = client.stok_veritabani
 def index():
     return render_template('index.html')
     
-    @app.route('/api/<col>', methods=['GET', 'POST'])
-def handle_generic_api(col):
-
 app.route('/api/products', methods=['GET'])
 def get_products():
     q = request.args.get('q', '').strip()
