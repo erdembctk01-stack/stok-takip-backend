@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>ÖZCAN OTO PRO | STOK TAKİP</title>
+    <title>ÖZCAN OTO PRO | YEDEKLEME MERKEZİ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -550,26 +550,6 @@
             reader.readAsText(file);
             input.value = "";
         }
-    <input type="text" id="search" placeholder="Ürün / Kategori Ara..." onkeyup="ara()" />
-
-<script>
-function ara() {
-    const q = document.getElementById("search").value;
-
-    fetch(/api/products?q=${q})
-        .then(r => r.json())
-        .then(data => {
-            console.log(data); // buraya tablo basılacak
-        });
-}
-        <form method="POST" action="/login">
-
-    <input type="text" name="username" placeholder="Kullanıcı Adı">
-    <input type="password" name="password" placeholder="Şifre">
-
-    <button type="submit">Giriş Yap</button>
-
-</form>
-</script>
+    </script>
 </body>
 </html>
