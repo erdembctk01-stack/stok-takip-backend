@@ -17,8 +17,6 @@ db = client.stok_veritabani
 def index():
     return render_template('index.html')
 
-@app.route('/api/<col>', methods=['GET', 'POST'])
-def handle_generic_api(col):
     if request.method == 'GET':
         items = list(db[col].find().sort('_id', -1))
         for i in items: i['_id'] = str(i['_id'])
