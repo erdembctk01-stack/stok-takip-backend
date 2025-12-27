@@ -37,7 +37,6 @@ def parca_duzenle(db, id, data):
 
     return {"ok": True}
     
-    }
     db.products.update_one({"_id": ObjectId(id)}, {"$set": update_data})
     return {"ok": True}
 
