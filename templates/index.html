@@ -3,142 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <title>ÖZCAN OTO PRO | YEDEKLEME MERKEZİ</title>
-    <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Lk0RbjMKuAgoLbwOebxgcSWigw_QiHTOGE-45-_kZtr3YxuiTZj_x1yKTqKCwHlFwBoabv-KmGtZGrJQmskfnSV5LhtdAWGHPc78YUXqqATq18GRYZQaEEcNeDkave2-n5FP4B59U-J33H3cwy4HXVfO2WePHfsu5OdBRwmnm_zGHQG905fMWolFF88IuCqrZlEzltvAVi8ZVtTKQItnZDOwWaQAxbYimfU1WA6iq1zCuZlZLcyDE9-6Zl_xRZVYp0qqc2n3PEe2K0WLE5_dFw" charset="UTF-8"></script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: #f8fafc; 
-            display: flex; 
-            margin: 0; 
-        }
-        
-        #login-screen { 
-            position: fixed; 
-            inset: 0; 
-            background: #0f172a; 
-            z-index: 10000; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-        }
-        
-        .sidebar { 
-            background: #0f172a; 
-            width: 280px; 
-            min-height: 100vh; 
-            color: white; 
-            flex-shrink: 0; 
-            display: flex; 
-            flex-direction: column; 
-        }
-        
-        .page-content { 
-            display: none; 
-            padding: 40px; 
-            width: 100%; 
-            height: 100vh; 
-            overflow-y: auto; 
-        }
-        
-        .active-section { 
-            display: block; 
-        }
-        
-        .sidebar-link { 
-            padding: 14px 20px; 
-            cursor: pointer; 
-            color: #94a3b8; 
-            border-radius: 10px; 
-            margin: 4px 15px; 
-            display: block; 
-            transition: 0.3s; 
-        }
-        
-        .sidebar-link:hover { 
-            background: #1e293b; 
-            color: white; 
-        }
-        
-        .sidebar-link.active { 
-            background: #3b82f6; 
-            color: white; 
-        }
-        
-        .card { 
-            background: white; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); 
-            padding: 24px; 
-        }
-        
-        .btn-primary { 
-            background: #3b82f6; 
-            color: white; 
-            padding: 10px 20px; 
-            border-radius: 8px; 
-            font-weight: 500; 
-            transition: 0.2s; 
-        }
-        
-        .btn-primary:hover { 
-            background: #2563eb; 
-        }
-        
-        input, select, textarea { 
-            width: 100%; 
-            padding: 10px; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 8px; 
-            margin-top: 5px; 
-            outline: none; 
-        }
-        
-        input:focus { 
-            border-color: #3b82f6; 
-        }
-        
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-        }
-        
-        th { 
-            background: #f1f5f9; 
-            text-align: left; 
-            padding: 12px; 
-            color: #64748b; 
-            font-size: 0.875rem; 
-            text-transform: uppercase; 
-        }
-        
-        td { 
-            padding: 12px; 
-            border-bottom: 1px solid #e2e8f0; 
-            color: #1e293b; 
-        }
-        
-        .modal { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0,0,0,0.5); 
-            z-index: 50; 
-            align-items: center; 
-            justify-content: center; 
-        }
-        
-        .modal-content { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 15px; 
-            width: 500px; 
-            max-width: 90%; 
-        }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; margin: 0; }
+        #login-screen { position: fixed; inset: 0; background: #0f172a; z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        .sidebar { background: #0f172a; width: 280px; min-height: 100vh; color: white; flex-shrink: 0; display: flex; flex-direction: column; }
+        .page-content { display: none; padding: 40px; width: 100%; height: 100vh; overflow-y: auto; }
+        .active-section { display: block; }
+        .sidebar-link { padding: 14px 20px; cursor: pointer; color: #94a3b8; border-radius: 10px; margin: 4px 15px; display: block; transition: 0.3s; }
+        .sidebar-link:hover { background: #1e293b; color: white; }
+        .sidebar-link.active { background: #3b82f6; color: white; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); padding: 24px; }
+        .btn-primary { background: #3b82f6; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 500; transition: 0.2s; }
+        .btn-primary:hover { background: #2563eb; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 5px; outline: none; }
+        input:focus { border-color: #3b82f6; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f1f5f9; text-align: left; padding: 12px; color: #64748b; font-size: 0.875rem; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #1e293b; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; width: 500px; max-width: 90%; }
     </style>
 </head>
 <body>
@@ -225,24 +110,14 @@
             <button onclick="openAddModal()" class="btn-primary"><i class="fas fa-plus mr-2"></i> Yeni Parça Ekle</button>
         </div>
         <div class="card">
-            <div class="flex flex-wrap gap-2 mb-6">
-                <input type="text" id="stok-ara" onkeyup="tabloAra('stok-tablo', this.value)" placeholder="Parça adı veya kodu ile ara..." style="flex: 1; min-width: 200px;">
-                
-                <select id="kategori-filtre" onchange="tabloAra('stok-tablo', document.getElementById('stok-ara').value)" style="width: auto; margin-top: 5px;">
-                    <option value="">Tüm Kategoriler</option>
-                    <option value="Fren">Fren</option>
-                    <option value="Motor">Motor</option>
-                    <option value="Şanzıman">Şanzıman</option>
-                    <option value="Aydınlatma">Aydınlatma</option>
-                </select>
-                
-                <select id="fiyat-sirala" onchange="fiyataGoreSirala()" style="width: auto; margin-top: 5px;">
-                    <option value="">Fiyat Sıralama</option>
+            <div class="flex gap-4 mb-6">
+                <input type="text" onkeyup="tabloAra('stok-tablo', this.value)" placeholder="Parça adı veya kodu ile ara..." style="flex: 2;">
+                <select id="fiyat-sirala" onchange="fiyataGoreSirala()" style="flex: 1;">
+                    <option value="">Fiyata Göre Sırala</option>
                     <option value="ucuz">Ucuzdan Pahalıya</option>
                     <option value="pahali">Pahalıdan Ucuza</option>
                 </select>
             </div>
-            
             <table id="stok-tablo">
                 <thead><tr><th>Kod</th><th>Parça Adı</th><th>Kategori</th><th>Stok</th><th>Fiyat</th><th>İşlemler</th></tr></thead>
                 <tbody id="stok-listesi"></tbody>
@@ -251,7 +126,9 @@
     </div>
 
     <div id="page-fatura" class="page-content">
-        <div class="flex justify-between items-center mb-8"><h2 class="text-3xl font-bold text-slate-800">Satış & Fatura Kes</h2></div>
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold text-slate-800">Satış & Fatura Kes</h2>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="card md:col-span-1">
                 <h3 class="font-bold mb-4 text-slate-700">Müşteri Bilgileri</h3>
@@ -379,7 +256,6 @@
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
             document.getElementById(id).classList.add('active-section');
             event.currentTarget.classList.add('active');
-            
             if(id === 'page-stok') yukleStok();
             if(id === 'page-fatura') { yukleStok(); yukleFaturalar(); }
             if(id === 'page-gider') yukleGiderler();
@@ -390,18 +266,15 @@
         async function loadStats() {
             const res = await fetch('/api/dashboard-stats');
             const data = await res.json();
-            
             document.getElementById('stat-kazanc').innerText = `₺${data.kazanc.toLocaleString()}`;
             document.getElementById('stat-gider').innerText = `₺${data.gider.toLocaleString()}`;
             document.getElementById('stat-kar').innerText = `₺${data.kar.toLocaleString()}`;
             document.getElementById('stat-stok').innerText = `${data.stok_adet} Adet`;
-            
             const salesBody = document.getElementById('dash-sales');
             salesBody.innerHTML = '';
             data.son_faturalar.forEach(f => {
                 salesBody.innerHTML += `<tr><td>${f.ad}</td><td class="font-bold">₺${f.toplam}</td><td class="text-xs">${f.tarih}</td></tr>`;
             });
-
             const stockBody = document.getElementById('dash-stock');
             stockBody.innerHTML = '';
             data.kritik_stok.forEach(p => {
@@ -414,10 +287,7 @@
             parcalar = await res.json();
             const liste = document.getElementById('stok-listesi');
             const select = document.getElementById('f-parca-sec');
-            
-            liste.innerHTML = ''; 
-            select.innerHTML = '';
-            
+            liste.innerHTML = ''; select.innerHTML = '';
             parcalar.forEach(p => {
                 liste.innerHTML += `<tr class="hover:bg-slate-50">
                     <td class="font-mono text-xs text-blue-600 font-bold">${p.code}</td>
@@ -440,41 +310,25 @@
             });
         }
 
-        function tabloAra(tabloId, deger) {
-            const filtreElem = document.getElementById('kategori-filtre');
-            const secilenKategori = filtreElem ? filtreElem.value.toLowerCase() : "";
-            const rows = document.querySelectorAll(`#${tabloId} tbody tr`);
-            
-            rows.forEach(row => {
-                const metin = row.innerText.toLowerCase();
-                const metinUyuyor = metin.includes(deger.toLowerCase());
-                const kategoriHucre = row.cells[2].innerText.toLowerCase();
-                const kategoriUyuyor = (secilenKategori === "" || kategoriHucre.includes(secilenKategori));
-
-                if (metinUyuyor && kategoriUyuyor) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
-
+        // BU FONKSİYON SADECE FİYATA GÖRE SIRALAMA İÇİN EKLENDİ
         function fiyataGoreSirala() {
             const siralamaTipi = document.getElementById('fiyat-sirala').value;
             const tbody = document.querySelector('#stok-tablo tbody');
             const rows = Array.from(tbody.querySelectorAll('tr'));
-
             if (siralamaTipi === "") return;
-
             rows.sort((a, b) => {
                 const fiyatA = parseFloat(a.cells[4].innerText.replace('₺', '').replace(',', '.').trim()) || 0;
                 const fiyatB = parseFloat(b.cells[4].innerText.replace('₺', '').replace(',', '.').trim()) || 0;
-
-                if (siralamaTipi === "ucuz") return fiyatA - fiyatB;
-                else return fiyatB - fiyatA;
+                return (siralamaTipi === "ucuz") ? fiyatA - fiyatB : fiyatB - fiyatA;
             });
-
             rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function tabloAra(tabloId, deger) {
+            const rows = document.querySelectorAll(`#${tabloId} tbody tr`);
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(deger.toLowerCase()) ? '' : 'none';
+            });
         }
 
         function openAddModal() {
@@ -487,9 +341,7 @@
             document.getElementById('p-price').value = "";
             document.getElementById('p-desc').value = "";
             document.getElementById('p-compat').value = "";
-            
             document.getElementById('p-stock').disabled = false;
-            document.getElementById('p-stock').classList.remove('bg-gray-100');
             document.getElementById('btn-save').onclick = parcaEkle;
             document.getElementById('modal-parca').style.display = 'flex';
         }
@@ -502,9 +354,7 @@
             document.getElementById('p-code').value = p.code;
             document.getElementById('p-cat').value = p.category;
             document.getElementById('p-stock').value = p.stock;
-            
             document.getElementById('p-stock').disabled = true;
-            document.getElementById('p-stock').classList.add('bg-gray-100');
             document.getElementById('p-price').value = p.price;
             document.getElementById('p-desc').value = p.desc || '';
             document.getElementById('p-compat').value = p.compat || '';
@@ -513,50 +363,29 @@
         }
 
         async function parcaEkle() {
-            const data = {
-                name: document.getElementById('p-name').value,
-                code: document.getElementById('p-code').value,
-                category: document.getElementById('p-cat').value,
-                stock: document.getElementById('p-stock').value,
-                price: document.getElementById('p-price').value,
-                desc: document.getElementById('p-desc').value,
-                compat: document.getElementById('p-compat').value
-            };
+            const data = { name: document.getElementById('p-name').value, code: document.getElementById('p-code').value, category: document.getElementById('p-cat').value, stock: document.getElementById('p-stock').value, price: document.getElementById('p-price').value, desc: document.getElementById('p-desc').value, compat: document.getElementById('p-compat').value };
             await fetch('/api/products', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-            closeModals(); 
-            yukleStok(); 
-            loadStats();
+            closeModals(); yukleStok(); loadStats();
         }
 
         async function parcaGuncelle() {
             const id = document.getElementById('edit-id').value;
-            const data = {
-                name: document.getElementById('p-name').value,
-                code: document.getElementById('p-code').value,
-                category: document.getElementById('p-cat').value,
-                price: document.getElementById('p-price').value,
-                desc: document.getElementById('p-desc').value,
-                compat: document.getElementById('p-compat').value
-            };
+            const data = { name: document.getElementById('p-name').value, code: document.getElementById('p-code').value, category: document.getElementById('p-cat').value, price: document.getElementById('p-price').value, desc: document.getElementById('p-desc').value, compat: document.getElementById('p-compat').value };
             await fetch(`/api/products/edit/${id}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-            closeModals(); 
-            yukleStok();
+            closeModals(); yukleStok();
         }
 
         async function stokGuncelle(id, miktar) {
             await fetch(`/api/products/update/${id}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({miktar})});
-            yukleStok(); 
-            loadStats();
+            yukleStok(); loadStats();
         }
 
         function sepeteEkle() {
             const sId = document.getElementById('f-parca-sec').value;
             const adet = parseInt(document.getElementById('f-adet').value);
             const parca = parcalar.find(p => p._id === sId);
-            
             if(adet > parca.stock) { alert("Yetersiz stok!"); return; }
             const varMi = sepet.find(s => s.parcaId === sId);
-            
             if(varMi) varMi.adet += adet;
             else sepet.push({ parcaId: sId, name: parca.name, adet: adet, fiyat: parseFloat(parca.price) });
             guncelleSepet();
@@ -564,41 +393,28 @@
 
         function guncelleSepet() {
             const liste = document.getElementById('sepet-listesi');
-            liste.innerHTML = ''; 
-            let toplam = 0;
-            
+            liste.innerHTML = ''; let toplam = 0;
             sepet.forEach((s, index) => {
-                const t = s.adet * s.fiyat; 
-                toplam += t;
+                const t = s.adet * s.fiyat; toplam += t;
                 liste.innerHTML += `<tr><td>${s.name}</td><td>${s.adet}</td><td>₺${s.fiyat}</td><td>₺${t}</td><td><button onclick="sepettenSil(${index})" class="text-red-500"><i class="fas fa-times"></i></button></td></tr>`;
             });
             document.getElementById('sepet-toplam').innerText = `₺${toplam.toFixed(2)}`;
         }
 
-        function sepettenSil(i) { 
-            sepet.splice(i, 1); 
-            guncelleSepet(); 
-        }
+        function sepettenSil(i) { sepet.splice(i, 1); guncelleSepet(); }
 
         async function faturaKes() {
             const data = { ad: document.getElementById('f-ad').value, tel: document.getElementById('f-tel').value, tarih: document.getElementById('f-tarih').value, items: sepet };
             if(!data.ad || sepet.length === 0) { alert("Eksik bilgi!"); return; }
-            
             await fetch('/api/toplu-satis', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
             alert("Fatura Kesildi!");
-            
-            sepet = []; 
-            guncelleSepet(); 
-            yukleStok(); 
-            yukleFaturalar(); 
-            loadStats();
+            sepet = []; guncelleSepet(); yukleStok(); yukleFaturalar(); loadStats();
         }
 
         async function yukleFaturalar() {
             const res = await fetch('/api/invoices');
             const data = await res.json();
             const liste = document.getElementById('fatura-listesi');
-            
             liste.innerHTML = '';
             data.forEach(f => {
                 liste.innerHTML += `<tr><td>${f.tarih}</td><td>${f.ad}</td><td class="text-xs">${f.parca_ad}</td><td class="font-bold">₺${f.toplam}</td><td><button onclick="sil('invoices','${f._id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></td></tr>`;
@@ -609,7 +425,6 @@
             const res = await fetch('/api/expenses');
             const data = await res.json();
             const liste = document.getElementById('gider-listesi');
-            
             liste.innerHTML = '';
             data.forEach(g => {
                 liste.innerHTML += `<tr><td>${g.tarih}</td><td>${g.desc}</td><td>${g.cat}</td><td class="text-red-600 font-bold">₺${g.tutar}</td><td><button onclick="sil('expenses','${g._id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></td></tr>`;
@@ -619,25 +434,20 @@
         async function giderEkle() {
             const data = { tarih: document.getElementById('g-tarih').value, desc: document.getElementById('g-desc').value, cat: document.getElementById('g-cat').value, tutar: document.getElementById('g-tutar').value };
             await fetch('/api/expenses', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)});
-            closeModals(); 
-            yukleGiderler(); 
-            loadStats();
+            closeModals(); yukleGiderler(); loadStats();
         }
 
         async function yukleMusteriler() {
             const res = await fetch('/api/customers');
             const data = await res.json();
             const liste = document.getElementById('musteri-listesi');
-            
             liste.innerHTML = '';
             data.forEach(m => {
                 liste.innerHTML += `<tr><td class="font-bold">${m.ad}</td><td>${m.tel}</td><td>${m.son_islem}</td><td><button class="text-blue-500"><i class="fas fa-eye"></i></button></td></tr>`;
             });
         }
 
-        function closeModals() { 
-            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
-        }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
 
         async function sil(col, id) {
             if(confirm('Silinsin mi?')) {
@@ -662,22 +472,16 @@
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'text/plain'});
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url; 
-                a.download = `${col}_yedek.txt`; 
-                a.click();
+                a.href = url; a.download = `${col}_yedek.txt`; a.click();
             });
         }
 
-        function triggerImport(type) { 
-            activeImportType = type; 
-            document.getElementById('import-file').click(); 
-        }
+        function triggerImport(type) { activeImportType = type; document.getElementById('import-file').click(); }
 
         async function processImport(input) {
             const file = input.files[0];
             if(!file) return;
             const reader = new FileReader();
-            
             reader.onload = async (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
